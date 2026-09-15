@@ -8,7 +8,7 @@ description = "Classes for representing different file formats in Python classes
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "deid",
+    "deid >= 0.4.12",
     "fileformats >= 0.15.0",
     "fileformats-extras[application] >= 0.15.0",
     "fileformats-medimage >= 0.9.4",
