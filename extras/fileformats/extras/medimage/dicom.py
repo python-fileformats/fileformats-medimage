@@ -1,6 +1,8 @@
 import logging
 import os
+import tempfile
 import typing as ty
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -17,6 +19,7 @@ from fileformats.medimage import (
     DicomDir,
     DicomImage,
     DicomSeries,
+    DicomZip,
     MedicalImage,
     MedicalImagingData,
 )
@@ -190,3 +193,41 @@ def dicom_collection_deidentify(
     else:
         deidentified = type_(deid_fspaths)
     return deidentified
+
+
+@extra_implementation(MedicalImagingData.deidentify)
+def dicom_zip_deidentify(
+    dz: DicomZip,
+    out_dir: os.PathLike[str],
+    spec: str | Path | None = None,
+    max_workers: int | None = None,
+    **kwargs: ty.Any,
+) -> DicomZip:
+    """Deidentify a DicomZip: extract all DICOMs, deidentify each, re-zip."""
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    transforms: dict[str, VariableBuilder] | None = kwargs.get("transforms", None)
+
+    # Extract all DICOMs from the zip
+    extract_dir = Path(tempfile.mkdtemp())
+    with zipfile.ZipFile(dz.fspath) as zf:
+        zf.extractall(extract_dir)
+
+    # Deidentify each extracted DICOM file
+    deid_dir = Path(tempfile.mkdtemp())
+    extracted = sorted(p for p in extract_dir.rglob("*") if p.is_file())
+
+    def _deidentify_one(fspath: Path) -> Path:
+        dicom = DicomImage(fspath)
+        return dicom.deidentify(deid_dir, spec=spec, transforms=transforms).fspath
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        deid_fspaths = list(executor.map(_deidentify_one, extracted))
+
+    # Re-zip the deidentified DICOMs
+    zip_path = out_dir / Path(dz.fspath).name
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for fspath in deid_fspaths:
+            zf.write(fspath, fspath.name)
+
+    return DicomZip(zip_path)
