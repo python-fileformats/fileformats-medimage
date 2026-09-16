@@ -29,6 +29,7 @@ from .dicom import (
     DicomCollection,
     DicomDir,
     DicomSeries,
+    DicomZip,
     # Vnd_Siemens_Vision,
     # Vnd_Siemens_VisionDir,
 )
@@ -120,7 +121,6 @@ from .itk import (
     ItkAll,
 )
 
-
 __all__ = [
     "__version__",
     "MedicalImagingData",
@@ -145,6 +145,7 @@ __all__ = [
     "DicomCollection",
     "DicomDir",
     "DicomSeries",
+    "DicomZip",
     "Kspace",
     "Rda",
     "PetRawData",

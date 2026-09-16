@@ -1,6 +1,7 @@
 import sys
 import os
 import typing as ty
+import zipfile
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -10,6 +11,7 @@ from fileformats.core.utils import collate_metadata_series
 from fileformats.core.collection import TypedCollection
 from fileformats.generic import TypedDirectory, TypedSet
 from fileformats.application import Dicom
+from fileformats.application.archive import BaseZip
 from .base import MedicalImage
 
 if sys.version_info >= (3, 9):
@@ -158,6 +160,94 @@ class DicomSeries(TypedSet, DicomCollection):
     ID_KEYS = ("StudyInstanceUID", "SeriesNumber")
 
 
+class DicomZip(MedicalImage, BaseZip):
+    """A zip archive containing DICOM files"""
+
+    iana_mime = "application/x-dicom+zip"
+
+    # DICOM tags used by peek_header
+    DICOM_TAGS: ty.ClassVar[ty.Dict[str, ty.Tuple[int, int]]] = {
+        "Modality": (0x0008, 0x0060),
+        "SOPClassUID": (0x0008, 0x0016),
+        "SeriesDescription": (0x0008, 0x103E),
+        "StudyInstanceUID": (0x0020, 0x000D),
+        "SeriesNumber": (0x0020, 0x0011),
+        "PatientID": (0x0010, 0x0020),
+        "AccessionNumber": (0x0008, 0x0050),
+        "StudyComments": (0x0032, 0x4000),
+    }
+
+    @mtime_cached_property
+    def _first_member_name(self) -> ty.Optional[str]:
+        """Name of the first non-directory entry in the zip."""
+        with zipfile.ZipFile(self.fspath) as zf:
+            members = sorted(
+                n for n in zf.namelist() if n.endswith(".dcm") or not n.endswith("/")
+            )
+        return members[0] if members else None
+
+    @mtime_cached_property
+    def num_members(self) -> int:
+        """Number of file entries in the zip archive."""
+        with zipfile.ZipFile(self.fspath) as zf:
+            return sum(
+                1 for n in zf.namelist() if n.endswith(".dcm") or not n.endswith("/")
+            )
+
+    def extract_first(self, dest_dir: Path) -> ty.Optional[Path]:
+        """Extract the first DICOM file from the zip to *dest_dir*.
+
+        Returns the path to the extracted file, or ``None`` if the zip is empty.
+        """
+        name = self._first_member_name
+        if name is None:
+            return None
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        out = dest_dir / (Path(self.fspath).stem + "-sample")
+        with zipfile.ZipFile(self.fspath) as zf:
+            out.write_bytes(zf.read(name))
+        return out
+
+    def peek_header(
+        self,
+        tags: ty.Optional[ty.Dict[str, ty.Tuple[int, int]]] = None,
+    ) -> ty.Dict[str, ty.Optional[ty.Union[str, bytes]]]:
+        """Read selected DICOM tags from the first file in the zip.
+
+        This avoids extracting the full archive or loading pixel data — only the
+        first member's header bytes are read. Uses the lightweight
+        ``get_dicom_tag`` parser so pydicom is not required.
+
+        Parameters
+        ----------
+        tags : dict, optional
+            Mapping of ``{name: (group, element)}`` for the tags to read.
+            Defaults to ``DicomZip.DICOM_TAGS``.
+
+        Returns
+        -------
+        dict
+            ``{name: value}`` for each requested tag, with ``None`` for any tag
+            not found. An empty dict is returned if the zip contains no files.
+        """
+        if tags is None:
+            tags = self.DICOM_TAGS
+        name = self._first_member_name
+        if name is None:
+            return {}
+        result: ty.Dict[str, ty.Optional[ty.Union[str, bytes]]] = {}
+        with zipfile.ZipFile(self.fspath) as zf:
+            for tag_name, tag in tags.items():
+                with zf.open(name) as f:
+                    result[tag_name] = get_dicom_tag(f, tag)
+        return result
+
+
+@extra_implementation(FileSet.read_metadata)
+def dicom_zip_read_metadata(dz: DicomZip, **kwargs: ty.Any) -> ty.Mapping[str, ty.Any]:
+    return dz.peek_header()
+
+
 @extra_implementation(FileSet.read_metadata)
 def dicom_collection_read_metadata(
     collection: DicomCollection, **kwargs: ty.Any
@@ -174,7 +264,9 @@ def dicom_collection_read_metadata(
 
 
 def get_dicom_tag(
-    file: ty.Union[str, os.PathLike[ty.Any], ty.BinaryIO],
+    file: ty.Union[
+        str, os.PathLike[ty.Any], ty.IO[bytes]
+    ],  # file path or binary stream
     target_tag: ty.Tuple[int, int],
 ) -> ty.Union[str, bytes, None]:
     """A basic function to read a DICOM file and extract the value of a specific tag.
