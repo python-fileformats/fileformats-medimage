@@ -6,6 +6,7 @@ require updating tests.
 """
 
 import os
+import zipfile
 import pytest
 import pydicom
 from pathlib import Path
@@ -15,7 +16,7 @@ from medimages4tests.dummy.dicom.mri.t1w.siemens.skyra.syngo_d13c import (
     get_image as get_dicom_image,
 )
 
-from fileformats.medimage import DicomDir, DicomImage, DicomSeries, Nifti1
+from fileformats.medimage import DicomDir, DicomImage, DicomSeries, DicomZip, Nifti1
 
 # ---------------------------------------------------------------------------
 # Recipe and variable builders (mirrors what the consumer must supply)
@@ -397,6 +398,81 @@ def test_deidentify_output_is_valid_dicom(single_dicom, tmp_path):
     )
     ds = pydicom.dcmread(str(deidentified.fspath))
     assert ds.PatientName is not None
+
+
+# ---------------------------------------------------------------------------
+# DicomZip format
+# ---------------------------------------------------------------------------
+
+
+def _make_dicom_zip(tmp_path: Path, seed: int = 0) -> DicomZip:
+    """Helper: create a DicomZip from a sample DicomSeries."""
+    series = DicomSeries.sample(tmp_path / f"src_{seed}", seed=seed)
+    zip_path = tmp_path / f"dicoms_{seed}.zip"
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        for fspath in series.fspaths:
+            zf.write(fspath, fspath.name)
+    return DicomZip(zip_path)
+
+
+def test_dicom_zip_deidentify(tmp_path: Path) -> None:
+    """Deidentifying a DicomZip produces a new DicomZip with replaced fields."""
+    dz = _make_dicom_zip(tmp_path)
+    out_dir = tmp_path / "deid_out"
+    deid_dz = dz.deidentify(
+        out_dir, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+    )
+    assert isinstance(deid_dz, DicomZip)
+    assert deid_dz.fspath != dz.fspath
+    assert deid_dz.num_members == dz.num_members
+
+
+def test_dicom_zip_deidentify_replaces_patient_name(tmp_path: Path) -> None:
+    """PatientName should be replaced after deidentification."""
+    dz = _make_dicom_zip(tmp_path)
+
+    # Read original PatientName from the zip
+    with zipfile.ZipFile(dz.fspath) as zf:
+        first = sorted(
+            n for n in zf.namelist() if n.endswith(".dcm") or not n.endswith("/")
+        )[0]
+        orig_ds = pydicom.dcmread(
+            pydicom.filebase.DicomBytesIO(zf.read(first)),
+            stop_before_pixels=True,
+            force=True,
+        )
+    orig_name = str(orig_ds.get("PatientName", ""))
+
+    out_dir = tmp_path / "deid_out"
+    deid_dz = dz.deidentify(
+        out_dir, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+    )
+
+    # Read deidentified PatientName
+    with zipfile.ZipFile(deid_dz.fspath) as zf:
+        first = sorted(
+            n for n in zf.namelist() if n.endswith(".dcm") or not n.endswith("/")
+        )[0]
+        deid_ds = pydicom.dcmread(
+            pydicom.filebase.DicomBytesIO(zf.read(first)),
+            stop_before_pixels=True,
+            force=True,
+        )
+    deid_name = str(deid_ds.get("PatientName", ""))
+    assert deid_name != orig_name, "PatientName should have been replaced"
+
+
+def test_dicom_zip_deidentify_all_members_valid(tmp_path: Path) -> None:
+    """Every file in the deidentified zip should be a valid DICOM."""
+    dz = _make_dicom_zip(tmp_path)
+    out_dir = tmp_path / "deid_out"
+    deid_dz = dz.deidentify(
+        out_dir, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+    )
+    with zipfile.ZipFile(deid_dz.fspath, "r") as zf:
+        for name in zf.namelist():
+            data = zf.read(name)
+            assert data[128:132] == b"DICM"
 
 
 # ---------------------------------------------------------------------------
