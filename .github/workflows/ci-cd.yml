@@ -59,10 +59,7 @@ jobs:
     - name: MyPy
       run: mypy --install-types --non-interactive  --no-warn-unused-ignores .
     - name: Pytest
-      run: |
-        mkdir work-dir
-        cd work-dir
-        pytest -vvs --cov fileformats --cov-config .coveragerc --cov-report xml ..
+      run: pytest -vvs --cov fileformats --cov-config .coveragerc --cov-report xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v7
       with:
