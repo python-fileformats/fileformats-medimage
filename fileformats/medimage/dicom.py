@@ -1,4 +1,3 @@
-import io
 import sys
 import os
 import typing as ty
@@ -182,14 +181,18 @@ class DicomZip(MedicalImage, BaseZip):
     def _first_member_name(self) -> ty.Optional[str]:
         """Name of the first non-directory entry in the zip."""
         with zipfile.ZipFile(self.fspath) as zf:
-            members = sorted(n for n in zf.namelist() if not n.endswith("/"))
+            members = sorted(
+                n for n in zf.namelist() if n.endswith(".dcm") or not n.endswith("/")
+            )
         return members[0] if members else None
 
     @mtime_cached_property
     def num_members(self) -> int:
         """Number of file entries in the zip archive."""
         with zipfile.ZipFile(self.fspath) as zf:
-            return sum(1 for n in zf.namelist() if not n.endswith("/"))
+            return sum(
+                1 for n in zf.namelist() if n.endswith(".dcm") or not n.endswith("/")
+            )
 
     def extract_first(self, dest_dir: Path) -> ty.Optional[Path]:
         """Extract the first DICOM file from the zip to *dest_dir*.
@@ -232,11 +235,11 @@ class DicomZip(MedicalImage, BaseZip):
         name = self._first_member_name
         if name is None:
             return {}
-        with zipfile.ZipFile(self.fspath) as zf:
-            blob = zf.read(name)
         result: ty.Dict[str, ty.Optional[ty.Union[str, bytes]]] = {}
-        for tag_name, tag_tuple in tags.items():
-            result[tag_name] = get_dicom_tag(io.BytesIO(blob), tag_tuple)
+        with zipfile.ZipFile(self.fspath) as zf:
+            for tag_name, tag in tags.items():
+                with zf.open(name) as f:
+                    result[tag_name] = get_dicom_tag(f, tag)
         return result
 
 
@@ -261,7 +264,9 @@ def dicom_collection_read_metadata(
 
 
 def get_dicom_tag(
-    file: ty.Union[str, os.PathLike[ty.Any], ty.BinaryIO],
+    file: ty.Union[
+        str, os.PathLike[ty.Any], ty.IO[bytes]
+    ],  # file path or binary stream
     target_tag: ty.Tuple[int, int],
 ) -> ty.Union[str, bytes, None]:
     """A basic function to read a DICOM file and extract the value of a specific tag.
