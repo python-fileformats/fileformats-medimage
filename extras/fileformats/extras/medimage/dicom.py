@@ -208,26 +208,31 @@ def dicom_zip_deidentify(
     out_dir.mkdir(parents=True, exist_ok=True)
     transforms: dict[str, VariableBuilder] | None = kwargs.get("transforms", None)
 
-    # Extract all DICOMs from the zip
-    extract_dir = Path(tempfile.mkdtemp())
-    with zipfile.ZipFile(dz.fspath) as zf:
-        zf.extractall(extract_dir)
+    with (
+        tempfile.TemporaryDirectory() as extract_dir,
+        tempfile.TemporaryDirectory() as deid_dir,
+    ):
+        extract_path = Path(extract_dir)
+        deid_path = Path(deid_dir)
 
-    # Deidentify each extracted DICOM file
-    deid_dir = Path(tempfile.mkdtemp())
-    extracted = sorted(p for p in extract_dir.rglob("*") if p.is_file())
+        # Extract all DICOMs from the zip
+        with zipfile.ZipFile(dz.fspath) as zf:
+            zf.extractall(extract_path)
 
-    def _deidentify_one(fspath: Path) -> Path:
-        dicom = DicomImage(fspath)
-        return dicom.deidentify(deid_dir, spec=spec, transforms=transforms).fspath
+        # Deidentify each extracted DICOM file
+        extracted = sorted(p for p in extract_path.rglob("*") if p.is_file())
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        deid_fspaths = list(executor.map(_deidentify_one, extracted))
+        def _deidentify_one(fspath: Path) -> Path:
+            dicom = DicomImage(fspath)
+            return dicom.deidentify(deid_path, spec=spec, transforms=transforms).fspath
 
-    # Re-zip the deidentified DICOMs
-    zip_path = out_dir / Path(dz.fspath).name
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        for fspath in deid_fspaths:
-            zf.write(fspath, fspath.name)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            deid_fspaths = list(executor.map(_deidentify_one, extracted))
+
+        # Re-zip the deidentified DICOMs
+        zip_path = out_dir / Path(dz.fspath).name
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for fspath in deid_fspaths:
+                zf.write(fspath, fspath.name)
 
     return DicomZip(zip_path)
