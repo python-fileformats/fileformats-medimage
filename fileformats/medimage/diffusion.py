@@ -1,10 +1,11 @@
 import typing
-from fileformats.core import extra, validated_property
-from fileformats.core.typing import TypeAlias
-from fileformats.core.mixin import WithAdjacentFiles
-from fileformats.generic import BinaryFile
-from .nifti import NiftiGzX, NiftiGz, Nifti1, NiftiX
 
+from fileformats.core import extra, validated_property
+from fileformats.core.mixin import WithAdjacentFiles
+from fileformats.core.typing import TypeAlias
+from fileformats.generic import BinaryFile
+
+from .nifti import Nifti1, NiftiGz, NiftiGzX, NiftiX
 
 if typing.TYPE_CHECKING:
     import numpy.typing  # noqa: F401
@@ -55,7 +56,7 @@ class Bvec(WithAdjacentFiles, DwiEncoding, BinaryFile):
 
     @validated_property
     def num_encodings(self) -> int:
-        num_bvals = len(self.b_values_file.read_array())
+        num_bvals = len(self.b_values_file.read_contents().split())
         num_bvecs = len(self.directions)
         if num_bvals != num_bvecs:
             raise ValueError(
