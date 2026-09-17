@@ -57,7 +57,15 @@ class Bvec(WithAdjacentFiles, DwiEncoding, BinaryFile):
     @validated_property
     def num_encodings(self) -> int:
         num_bvals = len(self.b_values_file.read_contents().split())
-        num_bvecs = len(self.directions)
+        x_len, y_len, z_len = [
+            len(ln.split()) for ln in self.read_contents().splitlines()
+        ]
+        if not (x_len == y_len == z_len):
+            raise ValueError(
+                "The number of entries in each bvec component must match"
+                f"x_len={x_len}, y_len={y_len}, z_len={z_len}"
+            )
+        num_bvecs = x_len
         if num_bvals != num_bvecs:
             raise ValueError(
                 f"The number of b-values ({num_bvals}) does not match the number of "
