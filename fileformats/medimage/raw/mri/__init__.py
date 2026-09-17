@@ -13,3 +13,7 @@ class Rda(BinaryFile):
 
     ext = ".rda"
     binary = True
+
+
+class Ismrmrd(Kspace):
+    ext = ".ismrmd"
