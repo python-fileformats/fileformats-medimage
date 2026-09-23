@@ -25,21 +25,23 @@ class WithBids(WithSideCars):
 class Nifti1(WithMagicNumber, Nifti):
 
     iana_mime = "application/x-nifti1"
-    magic_number = "6E2B3100"
+    # n+1 followed by null
+    magic_number = "6E 2B 31 00"
     magic_number_offset = 344
 
 
 class Nifti2(WithMagicNumber, Nifti):
 
     iana_mime = "application/x-nifti2"
-    magic_number = "6e2b3200"
-    magic_number_offset = 344
+    # n+2 followed by null, a carriage return, newline, EOF character, and newline
+    magic_number = '6E 2B 32 00 0D 0A 1A 0A'
+    magic_number_offset = 4
 
 
-class NiftiGz(Nifti, BaseGzip):
+class NiftiGz(Nifti1, BaseGzip):
     ext = ".nii.gz"
     iana_mime = "application/x-nifti1+gzip"
-    archived_type = Nifti
+    archived_type = Nifti1
 
 
 class NiftiX(WithBids, Nifti):
