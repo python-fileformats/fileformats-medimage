@@ -9,8 +9,6 @@ from .misc import (
 )
 from .nifti import (
     Nifti,
-    Nifti1,
-    Nifti2,
     NiftiGz,
     NiftiX,
     NiftiGzX,

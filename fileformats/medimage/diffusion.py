@@ -5,7 +5,7 @@ from fileformats.core.mixin import WithAdjacentFiles
 from fileformats.core.typing import TypeAlias
 from fileformats.generic import BinaryFile
 
-from .nifti import Nifti1, NiftiGz, NiftiGzX, NiftiX
+from .nifti import Nifti, NiftiGz, NiftiGzX, NiftiX
 
 if typing.TYPE_CHECKING:
     import numpy.typing  # noqa: F401
@@ -81,7 +81,7 @@ class WithBvec(WithAdjacentFiles):
         return Bvec(self.select_by_ext(Bvec))  # type: ignore[attr-defined]
 
 
-class NiftiBvec(WithBvec, Nifti1):
+class NiftiBvec(WithBvec, Nifti):
     iana_mime = "application/x-nifti2+bvec"
 
 
