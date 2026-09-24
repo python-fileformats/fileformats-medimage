@@ -7,8 +7,11 @@ from fileformats.core.exceptions import FormatMismatchError
 from fileformats.medimage import Nifti, NiftiGz
 
 
-def test_nifti_identify():
+def test_nifti1_identify():
     Nifti(get_nifti())
+
+
+def test_nifti2_identify():
     Nifti(get_nifti(nifti_version_2=True))
 
 
@@ -17,8 +20,12 @@ def test_nifti_not_identify():
         Nifti(get_dicom())
 
 
-def test_nifti_gz_identify():
+def test_nifti1_gz_identify():
     NiftiGz(get_nifti(compressed=True))
+
+
+def test_nifti2_gz_identify():
+    NiftiGz(get_nifti(compressed=True, nifti_version_2=True))
 
 
 def test_non_nifti_gz(tmp_path):

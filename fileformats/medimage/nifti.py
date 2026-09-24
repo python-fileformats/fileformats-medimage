@@ -1,3 +1,6 @@
+import warnings
+
+
 from fileformats.core.exceptions import FormatMismatchError
 from fileformats.generic import BinaryFile
 from fileformats.core import validated_property
@@ -41,6 +44,26 @@ class Nifti(WithMagicNumber, MedicalImage, BinaryFile):
     @property
     def magic_number(self) -> str:
         return self.magic_number_n1 if self.nifti_version_1 else self.magic_number_n2
+
+
+class Nifti1(Nifti):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "Nifti1 and Nifti2 are deprecated and are replaced by `Nifti`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
+class Nifti2(Nifti):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "Nifti1 and Nifti2 are deprecated and are replaced by `Nifti`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
 
 
 class WithBids(WithSideCars):

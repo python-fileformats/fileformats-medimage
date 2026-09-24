@@ -15,7 +15,7 @@ from medimages4tests.dummy.dicom.mri.t1w.siemens.skyra.syngo_d13c import (
     get_image as get_dicom_image,
 )
 
-from fileformats.medimage import DicomDir, DicomImage, DicomSeries, Nifti1
+from fileformats.medimage import DicomDir, DicomImage, DicomSeries, Nifti
 
 # ---------------------------------------------------------------------------
 # Recipe and variable builders (mirrors what the consumer must supply)
@@ -406,6 +406,6 @@ def test_deidentify_output_is_valid_dicom(single_dicom, tmp_path):
 
 def test_nifti_deidentify_raises(tmp_path):
     """Calling deidentify on an unsupported format should raise."""
-    nifti = Nifti1.sample()
+    nifti = Nifti.sample()
     with pytest.raises(FileFormatsExtrasError):
         nifti.deidentify(tmp_path)
