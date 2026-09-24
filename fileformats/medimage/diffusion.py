@@ -85,7 +85,7 @@ class NiftiBvec(WithBvec, Nifti):
     iana_mime = "application/x-nifti2+bvec"
 
 
-class NiftiGzBvec(WithBvec, NiftiGz):
+class NiftiGzBvec(WithBvec, NiftiGz):  # type: ignore[override]
     iana_mime = "application/x-nifti2+gzip.bvec"
 
 
@@ -93,5 +93,5 @@ class NiftiXBvec(WithBvec, NiftiX):
     iana_mime = "application/x-nifti2+json.bvec"
 
 
-class NiftiGzXBvec(WithBvec, NiftiGzX):
+class NiftiGzXBvec(WithBvec, NiftiGzX):  # type: ignore[override]
     iana_mime = "application/x-nifti2+gzip.json.bvec"

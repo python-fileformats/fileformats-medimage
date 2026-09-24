@@ -1,3 +1,4 @@
+from typing import ParamSpec
 import warnings
 
 
@@ -9,6 +10,7 @@ from fileformats.core.decorators import mtime_cached_property
 from fileformats.application import Json
 from fileformats.application.archive import BaseGzip
 from .base import MedicalImage
+
 
 class Nifti(WithMagicNumber, MedicalImage, BinaryFile):
     iana_mime = "application/x-nifti"
@@ -38,32 +40,25 @@ class Nifti(WithMagicNumber, MedicalImage, BinaryFile):
             raise FormatMismatchError("Not a valid Nifti header, the size indication does not match either 348 or 540 bytes!")
 
     @property
-    def magic_number_offset(self) -> int:
+    def magic_number_offset(self) -> int:  # type: ignore[override]
         return self.magic_number_offset_n1 if self.nifti_version_1 else self.magic_number_offset_n2
 
     @property
-    def magic_number(self) -> str:
+    def magic_number(self) -> str:  # type: ignore[override]
         return self.magic_number_n1 if self.nifti_version_1 else self.magic_number_n2
 
 
+P = ParamSpec("P")
+
+
+@warnings.deprecated("Nifti1 and Nifti2 are deprecated and replaced by `Nifti`.")
 class Nifti1(Nifti):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "Nifti1 and Nifti2 are deprecated and are replaced by `Nifti`.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(*args, **kwargs)
+    pass
 
 
+@warnings.deprecated("Nifti1 and Nifti2 are deprecated and replaced by `Nifti`.")
 class Nifti2(Nifti):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "Nifti1 and Nifti2 are deprecated and are replaced by `Nifti`.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(*args, **kwargs)
+    pass
 
 
 class WithBids(WithSideCars):
@@ -75,7 +70,7 @@ class WithBids(WithSideCars):
         return Json(self.select_by_ext(Json))  # type: ignore[attr-defined]
 
 
-class NiftiGz(Nifti, BaseGzip):
+class NiftiGz(Nifti, BaseGzip):  # type: ignore[override]
     ext = ".nii.gz"
     iana_mime = "application/x-nifti+gzip"
     archived_type = Nifti
@@ -85,7 +80,7 @@ class NiftiX(WithBids, Nifti):
     iana_mime = "application/x-nifti+json"
 
 
-class NiftiGzX(WithBids, NiftiGz):
+class NiftiGzX(WithBids, NiftiGz):  # type: ignore[override]
     iana_mime = "application/x-nifti+gzip.bids"
 
 
