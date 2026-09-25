@@ -1,6 +1,8 @@
-from typing import ParamSpec
-import warnings
-
+import sys
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
 
 from fileformats.core.exceptions import FormatMismatchError
 from fileformats.generic import BinaryFile
@@ -48,15 +50,12 @@ class Nifti(WithMagicNumber, MedicalImage, BinaryFile):
         return self.magic_number_n1 if self.nifti_version_1 else self.magic_number_n2
 
 
-P = ParamSpec("P")
-
-
-@warnings.deprecated("Nifti1 and Nifti2 are deprecated and replaced by `Nifti`.")
+@deprecated("Nifti1 and Nifti2 are deprecated and replaced by `Nifti`.")
 class Nifti1(Nifti):
     pass
 
 
-@warnings.deprecated("Nifti1 and Nifti2 are deprecated and replaced by `Nifti`.")
+@deprecated("Nifti1 and Nifti2 are deprecated and replaced by `Nifti`.")
 class Nifti2(Nifti):
     pass
 
