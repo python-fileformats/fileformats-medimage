@@ -8,7 +8,7 @@ from fileformats.image import (
     Tiff,
 )
 from fileformats.application import Gzip
-from .nifti import Nifti1, NiftiGz
+from .nifti import Nifti, NiftiGz
 from .dicom import DicomImage
 
 
@@ -47,11 +47,11 @@ class NrrdGz(Gzip[Nrrd]):  # type: ignore[type-arg]
 
 
 ItkImage = ty.Union[
-    Nifti1, NiftiGz, DicomImage, Bitmap, Tiff, Jpeg, GIPL, MetaImage, Nrrd, NrrdGz, PGM
+    Nifti, NiftiGz, DicomImage, Bitmap, Tiff, Jpeg, GIPL, MetaImage, Nrrd, NrrdGz, PGM
 ]
 
 ItkAll = ty.Union[
-    Nifti1,
+    Nifti,
     NiftiGz,
     DicomImage,
     Bitmap,

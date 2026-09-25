@@ -7,7 +7,10 @@ name = "fileformats-medimage"
 description = "Classes for representing various medical imaging file formats in Python classes for use in type hinting in data workflows"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["fileformats >=0.15"]
+dependencies = [
+    "fileformats >=0.15",
+    "typing_extensions>=4.16.0; python_version < '3.13'"
+]
 license = { file = "LICENSE" }
 authors = [{ name = "Thomas G. Close", email = "tom.g.close@gmail.com" }]
 maintainers = [{ name = "Thomas G. Close", email = "tom.g.close@gmail.com" }]
@@ -40,7 +43,7 @@ test = [
     "pytest >=6.2.5",
     "pytest-env>=0.6.2",
     "pytest-cov>=2.12.1",
-    "medimages4tests >=0.3",
+    "medimages4tests >=0.5.10",
     "mypy >=1.5.1",
     "fileformats-medimage-extras",
     "pydra-tasks-dcm2niix",

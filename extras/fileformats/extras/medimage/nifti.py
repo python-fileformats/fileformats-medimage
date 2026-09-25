@@ -8,7 +8,6 @@ from fileformats.medimage import (
     MedicalImage,
     Nifti,
     NiftiGz,
-    Nifti1,
     NiftiGzX,
     NiftiGzXBvec,
     NiftiXBvec,
@@ -53,12 +52,12 @@ def nifti_dims(nifti: Nifti) -> ty.Tuple[int, int, int]:
 
 @extra_implementation(FileSet.generate_sample_data)
 def nifti_generate_sample_data(
-    nifti: Nifti1,
+    nifti: Nifti,
     generator: SampleFileGenerator,
 ) -> ty.List[Path]:
     return [
         medimages4tests.dummy.nifti.get_image(
-            out_file=generator.generate_fspath(file_type=Nifti1),
+            out_file=generator.generate_fspath(file_type=Nifti),
             seed=generator.seed,
         )
     ]
