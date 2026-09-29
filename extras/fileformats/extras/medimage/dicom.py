@@ -21,6 +21,7 @@ from fileformats.medimage import (
     MedicalImagingData,
 )
 from fileformats.medimage.base import DataArrayType
+from .transform import hash_patient_id
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,11 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 VariableBuilder = ty.Callable[[pydicom.Dataset], str | int]
+
+PATIENT_ID_VARIABLE = "patient_id"
+DEFAULT_TRANSFORMS: dict[str, VariableBuilder] = {
+    PATIENT_ID_VARIABLE: lambda ds: str(ds.get("PatientID", "")),
+}
 
 
 @extra_implementation(MedicalImage.read_array)
@@ -110,7 +116,9 @@ def dicom_deidentify(
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     outfile = out_dir / dicom.fspath.name
-    transforms: dict[str, VariableBuilder] | None = kwargs.get("transforms", None)
+    caller_transforms: dict[str, VariableBuilder] | None = kwargs.get(
+        "transforms", None
+    )
 
     if spec is None:
         raise ValueError(
@@ -118,9 +126,10 @@ def dicom_deidentify(
         )
     deid_spec = DeidRecipe(str(spec))
 
-    # Parse recipe to find all var: references and check transforms are provided
-    if transforms is None:
-        transforms = {}
+    # Merge default transforms with caller-supplied ones.
+    transforms: dict[str, VariableBuilder] = dict(DEFAULT_TRANSFORMS)
+    if caller_transforms:
+        transforms.update(caller_transforms)
 
     recipe_vars = set()
     spec_path = Path(spec)
@@ -147,6 +156,10 @@ def dicom_deidentify(
     parser = DicomParser(str(dicom.fspath), recipe=deid_spec)
 
     ds = parser.dicom
+    if "PatientID" in ds:
+        # Builders and recipe actions must see the pseudonym, never the raw ID.
+        ds.PatientID = hash_patient_id(None, str(ds.PatientID), "PatientID", ds) or ""
+
     for var_name, builder in transforms.items():
         try:
             value = builder(ds)

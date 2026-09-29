@@ -5,6 +5,7 @@ by parsing the recipe programmatically. Adding or changing recipe rules does not
 require updating tests.
 """
 
+import hashlib
 import os
 import pytest
 import pydicom
@@ -16,6 +17,8 @@ from medimages4tests.dummy.dicom.mri.t1w.siemens.skyra.syngo_d13c import (
 )
 
 from fileformats.medimage import DicomDir, DicomImage, DicomSeries, Nifti1
+from fileformats.extras.medimage.dicom import dicom_deidentify
+from fileformats.extras.medimage import transform as deidentify_transforms
 
 # ---------------------------------------------------------------------------
 # Recipe and variable builders (mirrors what the consumer must supply)
@@ -36,6 +39,21 @@ DEFAULT_VARIABLE_BUILDERS = {
     ),
     "date_jitter": lambda _ds: int(os.environ.get("DEID_DATE_JITTER", "0")),
 }
+
+
+@pytest.fixture(autouse=True)
+def deidentify_salt(monkeypatch):
+    """Use an explicit, non-secret salt for every deidentification test."""
+    monkeypatch.setenv("DEID_SALT", "unit-test-salt")
+    monkeypatch.setitem(
+        deidentify_transforms.hash_patient_id.__globals__, "_SALT", "unit-test-salt"
+    )
+    # fileformats' extras loader can register a second module instance.
+    dispatch_method = DicomImage.deidentify.__closure__[0].cell_contents
+    registered_deidentify = dispatch_method.registry[DicomImage]
+    registered_hash = registered_deidentify.__globals__["hash_patient_id"]
+    monkeypatch.setitem(registered_hash.__globals__, "_SALT", "unit-test-salt")
+
 
 _PATTERN_PREFIXES = ("endswith:", "startswith:", "contains:")
 
@@ -358,6 +376,140 @@ def test_partial_transforms_raises(single_dicom, tmp_path):
     partial = {"anon_patient_id": lambda _ds: "test"}
     with pytest.raises(ValueError, match="var: variables"):
         single_dicom.deidentify(tmp_path, spec=DEFAULT_RECIPE, transforms=partial)
+
+
+# ---------------------------------------------------------------------------
+# Patient ID hashing
+# ---------------------------------------------------------------------------
+
+
+def test_hash_requires_a_salt(monkeypatch):
+    """Hashing must fail closed when no site salt has been configured."""
+    monkeypatch.setitem(
+        deidentify_transforms.hash_patient_id.__globals__, "_SALT", None
+    )
+
+    with pytest.raises(RuntimeError, match="DEID_SALT must be set"):
+        deidentify_transforms.hash_patient_id(
+            None, "patient-123", "PatientID", pydicom.Dataset()
+        )
+
+
+def test_patient_id_hash_is_deterministic_and_truncated(deidentify_salt):
+    """Patient IDs use the documented salted SHA-256 96-bit pseudonym."""
+    value = "patient-123"
+    expected = hashlib.sha256(f"unit-test-salt{value}".encode("utf-8")).hexdigest()[:24]
+
+    first = deidentify_transforms.hash_patient_id(
+        None, value, "PatientID", pydicom.Dataset()
+    )
+    second = deidentify_transforms.hash_patient_id(
+        None, value, "PatientID", pydicom.Dataset()
+    )
+
+    assert first == second == expected
+    assert len(first) == 24
+
+
+def test_patient_id_hash_changes_with_value_and_salt(deidentify_salt, monkeypatch):
+    """Neither another patient nor another site salt should share a pseudonym."""
+    original = deidentify_transforms.hash_patient_id(
+        None, "patient-123", "PatientID", pydicom.Dataset()
+    )
+    other_patient = deidentify_transforms.hash_patient_id(
+        None, "patient-456", "PatientID", pydicom.Dataset()
+    )
+    monkeypatch.setitem(
+        deidentify_transforms.hash_patient_id.__globals__,
+        "_SALT",
+        "another-site-salt",
+    )
+    other_site = deidentify_transforms.hash_patient_id(
+        None, "patient-123", "PatientID", pydicom.Dataset()
+    )
+
+    assert original != other_patient
+    assert original != other_site
+
+
+@pytest.mark.parametrize("value", ["", None])
+def test_hash_transforms_blank_empty_values(value, deidentify_salt):
+    """Missing identifiers should remain blank instead of hashing the salt alone."""
+    dataset = pydicom.Dataset()
+
+    assert (
+        deidentify_transforms.hash_patient_id(None, value, "PatientID", dataset) is None
+    )
+    assert (
+        deidentify_transforms.hash_value_fields(None, value, "AccessionNumber", dataset)
+        is None
+    )
+
+
+def test_value_field_hash_is_field_separated_and_vr_safe(deidentify_salt):
+    """Equal raw values in different fields must not create linkable hashes."""
+    dataset = pydicom.Dataset()
+    accession_hash = deidentify_transforms.hash_value_fields(
+        None, "shared-value", "AccessionNumber", dataset
+    )
+    study_hash = deidentify_transforms.hash_value_fields(
+        None, "shared-value", "StudyID", dataset
+    )
+    expected = hashlib.sha256(b"unit-test-saltAccessionNumbershared-value").hexdigest()[
+        :16
+    ]
+
+    assert accession_hash == expected
+    assert accession_hash != study_hash
+    assert len(accession_hash) == 16
+
+
+def test_deidentify_hashes_patient_id_before_variable_builders(
+    single_dicom, tmp_path, deidentify_salt
+):
+    """One-argument builders see the hashed ID, including in other fields."""
+    original_id = str(single_dicom.metadata["PatientID"])
+    expected_hash = deidentify_transforms.hash_patient_id(
+        None, original_id, "PatientID", pydicom.Dataset()
+    )
+    builders = {
+        **DEFAULT_VARIABLE_BUILDERS,
+        "anon_patient_id": lambda ds: f"site-{ds.PatientID}",
+    }
+
+    deidentified = dicom_deidentify(
+        single_dicom, tmp_path, spec=DEFAULT_RECIPE, transforms=builders
+    )
+
+    assert deidentified.metadata["PatientID"] == f"site-{expected_hash}"
+    assert str(deidentified.metadata["PatientName"]) == expected_hash
+    assert f"Subject={expected_hash}" in deidentified.metadata["PatientComments"]
+    for field in ("PatientID", "PatientName", "PatientComments"):
+        assert original_id not in str(deidentified.metadata[field])
+
+
+def test_default_patient_id_variable_uses_hash(single_dicom, tmp_path, deidentify_salt):
+    """The built-in patient_id variable can be used without a callback."""
+    original_id = str(single_dicom.metadata["PatientID"])
+    expected_hash = deidentify_transforms.hash_patient_id(
+        None, original_id, "PatientID", pydicom.Dataset()
+    )
+    recipe_file = tmp_path / "patient_id.dicom"
+    recipe_file.write_text(
+        "FORMAT dicom\n\n%header\nREPLACE PatientID var:patient_id\n"
+    )
+
+    deidentified = dicom_deidentify(single_dicom, tmp_path / "output", spec=recipe_file)
+
+    assert deidentified.metadata["PatientID"] == expected_hash
+
+    customized = dicom_deidentify(
+        single_dicom,
+        tmp_path / "customized",
+        spec=recipe_file,
+        transforms={"patient_id": lambda ds: f"site-{ds.PatientID}"},
+    )
+    assert customized.metadata["PatientID"] == f"site-{expected_hash}"
 
 
 # ---------------------------------------------------------------------------
