@@ -16,24 +16,24 @@ repos:
         args:
           - -l 88
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: v2.4.3
     hooks:
       - id: codespell
         exclude: ^(xnat_checks/_version\.py|versioneer\.py)$
         args:
           - --ignore-words=.codespell-ignorewords
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.3.0
+    rev: 7.4.1
     hooks:
       - id: flake8
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.1.0
+    rev: v2.3.1
     hooks:
       - id: mypy
         args: [--strict, --install-types, --non-interactive]
         exclude: tests
         additional_dependencies:
-          - fileformats>=0.15.0a2
+          - fileformats>=0.19
           - pytest
           - pydicom
           - nibabel
