@@ -4,15 +4,22 @@ import typing as ty
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import deid.config
 import fileformats.extras.application.medical  # noqa: F401
 import medimages4tests.dummy.dicom.mri.t1w.siemens.skyra.syngo_d13c
 import numpy
 import pydicom
-from deid.config import DeidRecipe
 from deid.dicom.parser import DicomParser
-from fileformats.core import FileSet, SampleFileGenerator, extra_implementation
+from fileformats.core import (
+    FileSet,
+    Loaded,
+    SampleFileGenerator,
+    check_loaded,
+    extra_implementation,
+)
 
 from fileformats.medimage import (
+    DeidRecipe,
     DicomCollection,
     DicomDir,
     DicomImage,
@@ -25,7 +32,7 @@ from fileformats.medimage.base import DataArrayType
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Variable builders for deid spec var: references
+# Variable builders for deid recipe var: references
 # ---------------------------------------------------------------------------
 # Each callable receives the pydicom Dataset and returns the substitution
 # value. Sites can override any entry by passing transforms={...}
@@ -100,11 +107,34 @@ SERIES_NUMBER_TAG = ("0020", "0011")
 SERIES_NUMBER_RANGE = int(1e8)
 
 
+@extra_implementation(FileSet.load)
+def deid_recipe_load(recipe: DeidRecipe, **kwargs: ty.Any) -> "deid.config.DeidRecipe":
+    return deid.config.DeidRecipe(str(recipe.fspath), **kwargs)
+
+
+def _recipe_vars(recipe: "deid.config.DeidRecipe") -> set[str]:
+    """Names of the variables referenced by 'var:' values anywhere in the recipe"""
+    recipe_vars: set[str] = set()
+
+    def walk(node: ty.Any) -> None:
+        if isinstance(node, dict):
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+        elif isinstance(node, str):
+            recipe_vars.update(t[4:] for t in node.split() if t.startswith("var:"))
+
+    walk(recipe.deid)
+    return recipe_vars
+
+
 @extra_implementation(MedicalImagingData.deidentify)
 def dicom_deidentify(
     dicom: DicomImage,
     out_dir: os.PathLike[str],
-    spec: str | Path | None = None,
+    recipe: Loaded[DeidRecipe] | None = None,
     **kwargs: ty.Any,
 ) -> DicomImage:
     out_dir = Path(out_dir)
@@ -112,39 +142,25 @@ def dicom_deidentify(
     outfile = out_dir / dicom.fspath.name
     transforms: dict[str, VariableBuilder] | None = kwargs.get("transforms", None)
 
-    if spec is None:
+    if recipe is None:
         raise ValueError(
-            "A deidentification spec must be provided for DICOM deidentification"
+            "A deidentification recipe must be provided for DICOM deidentification"
         )
-    deid_spec = DeidRecipe(str(spec))
+    # DicomParser silently accepts a path too, so check it was loaded from DeidRecipe
+    check_loaded(DeidRecipe, recipe)
 
-    # Parse recipe to find all var: references and check transforms are provided
+    # Check transforms are provided for all var: references in the recipe
     if transforms is None:
         transforms = {}
 
-    recipe_vars = set()
-    spec_path = Path(spec)
-    if spec_path.is_file():
-        with open(spec_path) as f:
-            for line in f:
-                stripped = line.strip()
-                if stripped.startswith("#") or not stripped:
-                    continue
-                # Strip inline comments
-                if " #" in stripped:
-                    stripped = stripped[: stripped.index(" #")]
-                for token in stripped.split():
-                    if token.startswith("var:"):
-                        recipe_vars.add(token[4:])
-
-    missing = recipe_vars - set(transforms)
+    missing = _recipe_vars(recipe) - set(transforms)
     if missing:
         raise ValueError(
             f"Recipe references var: variables {missing} but no matching "
             f"transforms were provided. Supply these via the 'transforms' argument."
         )
 
-    parser = DicomParser(str(dicom.fspath), recipe=deid_spec)
+    parser = DicomParser(str(dicom.fspath), recipe=recipe)
 
     ds = parser.dicom
     for var_name, builder in transforms.items():
@@ -169,7 +185,7 @@ def dicom_deidentify(
 def dicom_collection_deidentify(
     collection: DicomCollection,
     out_dir: os.PathLike[str],
-    spec: str | Path | None = None,
+    recipe: Loaded[DeidRecipe] | None = None,
     max_workers: int | None = None,
     **kwargs: ty.Any,
 ) -> DicomCollection:
@@ -180,7 +196,7 @@ def dicom_collection_deidentify(
     transforms: dict[str, VariableBuilder] | None = kwargs.get("transforms", None)
 
     def _deidentify_one(dicom: DicomImage) -> Path:
-        return dicom.deidentify(out_dir, spec=spec, transforms=transforms).fspath
+        return dicom.deidentify(out_dir, recipe=recipe, transforms=transforms).fspath
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         deid_fspaths = list(executor.map(_deidentify_one, collection.contents))

@@ -1,10 +1,9 @@
 import logging
 import os
-from pathlib import Path
 import sys
 import typing as ty
 
-from fileformats.core import FileSet, extra, mtime_cached_property
+from fileformats.core import FileSet, Loaded, extra, mtime_cached_property
 from fileformats.core.mixin import WithClassifiers
 
 from .contents import ContentsClassifier
@@ -46,7 +45,7 @@ class MedicalImagingData(FileSet):
     def deidentify(
         self,
         out_dir: os.PathLike[str],
-        spec: str | Path | None = None,
+        recipe: Loaded[FileSet] | None = None,
         **kwargs: ty.Any,
     ) -> Self:
         """
@@ -66,11 +65,14 @@ class MedicalImagingData(FileSet):
         ----------
         out_dir: PathLike[str]
             The directory where the deidentified image should be saved
-        spec: Any, optional
-            A specification for the deidentification process, which may include details on
-            which fields to remove or how to handle certain types of data. The exact
-            structure of this specification will depend on the specific image format and the
-            requirements of the deidentification process.
+        recipe: Loaded[FileSet], optional
+            A recipe for the deidentification process, loaded from a format that depends
+            on the implementation (e.g. `DeidRecipe` for DICOM), which may include
+            details on which fields to remove or how to handle certain types of data.
+            Implementations annotate it with ``Loaded[<recipe format>]``, so callers can
+            find the format to load the recipe from with
+            ``LoadedMarker.from_hint(get_type_hints(find_extra_implementation(
+            MedicalImagingData.deidentify, type(image)), include_extras=True)["recipe"])``
         **kwargs: Any
             Additional format-specific keyword arguments (e.g. concurrency options),
             which implementations that don't use them should accept and ignore

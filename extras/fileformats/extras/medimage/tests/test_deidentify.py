@@ -6,6 +6,7 @@ require updating tests.
 """
 
 import os
+import typing as ty
 import pytest
 import pydicom
 from pathlib import Path
@@ -15,13 +16,22 @@ from medimages4tests.dummy.dicom.mri.t1w.siemens.skyra.syngo_d13c import (
     get_image as get_dicom_image,
 )
 
-from fileformats.medimage import DicomDir, DicomImage, DicomSeries, Nifti1
+from fileformats.core import LoadedMarker, find_extra_implementation
+from fileformats.medimage import (
+    DicomDir,
+    DicomImage,
+    DicomSeries,
+    MedicalImagingData,
+    Nifti1,
+)
+from fileformats.medimage import DeidRecipe as DeidRecipeFile
 
 # ---------------------------------------------------------------------------
 # Recipe and variable builders (mirrors what the consumer must supply)
 # ---------------------------------------------------------------------------
 
-DEFAULT_RECIPE = Path(__file__).parent / "recipe.dicom"
+DEFAULT_RECIPE_PATH = Path(__file__).parent / "recipe.dicom"
+DEFAULT_RECIPE = DeidRecipeFile(DEFAULT_RECIPE_PATH).load()
 
 DEFAULT_VARIABLE_BUILDERS = {
     "anon_birth_date": lambda ds: str(ds.get("PatientBirthDate", ""))[:4] + "0101",
@@ -95,7 +105,7 @@ def _all_explicit_fields(actions: dict) -> set[str]:
 
 @pytest.fixture(scope="module")
 def recipe_actions():
-    return _parse_actions(DEFAULT_RECIPE)
+    return _parse_actions(DEFAULT_RECIPE_PATH)
 
 
 @pytest.fixture(params=["image", "dir", "series"])
@@ -131,7 +141,7 @@ def test_remove_explicit_fields_are_absent(dicom, tmp_path, recipe_actions):
         pytest.skip("No testable REMOVE fields found in test DICOM")
 
     deidentified = dicom.deidentify(
-        tmp_path, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+        tmp_path, recipe=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
     )
     for field in remove_fields:
         assert field not in deidentified.metadata, f"{field} should have been removed"
@@ -154,7 +164,7 @@ def test_remove_pattern_fields_are_absent(dicom, tmp_path, recipe_actions):
         )
 
     deidentified = dicom.deidentify(
-        tmp_path, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+        tmp_path, recipe=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
     )
     for field in sorted(testable):
         assert (
@@ -176,7 +186,7 @@ def test_keep_fields_are_unchanged(dicom, tmp_path, recipe_actions):
 
     orig_values = {f: dicom.metadata[f] for f in keep_fields}
     deidentified = dicom.deidentify(
-        tmp_path, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+        tmp_path, recipe=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
     )
     for field in keep_fields:
         assert field in deidentified.metadata, f"{field} should still be present"
@@ -204,7 +214,7 @@ def test_replace_fields_are_changed(dicom, tmp_path, recipe_actions):
 
     orig_values = {f: str(dicom.metadata[f]) for f in replace_fields}
     deidentified = dicom.deidentify(
-        tmp_path, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+        tmp_path, recipe=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
     )
     for field in replace_fields:
         assert field in deidentified.metadata, f"{field} should still be present"
@@ -226,7 +236,7 @@ def test_add_fields_are_present(dicom, tmp_path, recipe_actions):
     assert add_entries, "No ADD entries in recipe"
 
     deidentified = dicom.deidentify(
-        tmp_path, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+        tmp_path, recipe=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
     )
     for entry in add_entries:
         field = entry["field"]
@@ -251,7 +261,7 @@ def test_blank_fields_are_empty(dicom, tmp_path, recipe_actions):
     assert blank_fields, "No testable BLANK fields found"
 
     deidentified = dicom.deidentify(
-        tmp_path, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+        tmp_path, recipe=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
     )
     for field in blank_fields:
         value = deidentified.metadata.get(field)
@@ -282,7 +292,7 @@ def test_jitter_fields_unchanged_with_zero_jitter(dicom, tmp_path, recipe_action
 
     orig_values = {f: dicom.metadata[f] for f in jitter_fields}
     deidentified = dicom.deidentify(
-        tmp_path, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+        tmp_path, recipe=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
     )
     for field in jitter_fields:
         assert field in deidentified.metadata, f"{field} should still be present"
@@ -303,7 +313,7 @@ def test_jitter_fields_unchanged_with_zero_jitter(dicom, tmp_path, recipe_action
 #     assert orig_private_tags, "Test DICOM has no private tags"
 
 #     deidentified = single_dicom.deidentify(
-#         tmp_path, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+#         tmp_path, recipe=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
 #     )
 #     deid_ds = pydicom.dcmread(str(deidentified.fspath))
 #     deid_private_tags = [elem.tag for elem in deid_ds if elem.tag.is_private]
@@ -324,7 +334,7 @@ def test_custom_transforms_override_defaults(single_dicom, tmp_path):
         "anon_patient_name": lambda _ds: "CUSTOM_NAME",
     }
     deidentified = single_dicom.deidentify(
-        tmp_path, spec=DEFAULT_RECIPE, transforms=custom_builders
+        tmp_path, recipe=DEFAULT_RECIPE, transforms=custom_builders
     )
     assert str(deidentified.metadata["PatientName"]) == "CUSTOM_NAME"
 
@@ -337,7 +347,7 @@ def test_custom_transforms_preserve_other_defaults(single_dicom, tmp_path):
     }
     orig_year = single_dicom.metadata["PatientBirthDate"][:4]
     deidentified = single_dicom.deidentify(
-        tmp_path, spec=DEFAULT_RECIPE, transforms=custom_builders
+        tmp_path, recipe=DEFAULT_RECIPE, transforms=custom_builders
     )
     assert deidentified.metadata["PatientBirthDate"] == f"{orig_year}0101"
 
@@ -350,14 +360,14 @@ def test_custom_transforms_preserve_other_defaults(single_dicom, tmp_path):
 def test_missing_transforms_raises(single_dicom, tmp_path):
     """Should raise ValueError when recipe has var: references but transforms are missing."""
     with pytest.raises(ValueError, match="var: variables"):
-        single_dicom.deidentify(tmp_path, spec=DEFAULT_RECIPE)
+        single_dicom.deidentify(tmp_path, recipe=DEFAULT_RECIPE)
 
 
 def test_partial_transforms_raises(single_dicom, tmp_path):
     """Should raise ValueError when only some of the required transforms are provided."""
     partial = {"anon_patient_id": lambda _ds: "test"}
     with pytest.raises(ValueError, match="var: variables"):
-        single_dicom.deidentify(tmp_path, spec=DEFAULT_RECIPE, transforms=partial)
+        single_dicom.deidentify(tmp_path, recipe=DEFAULT_RECIPE, transforms=partial)
 
 
 # ---------------------------------------------------------------------------
@@ -372,7 +382,8 @@ def test_custom_recipe_path(single_dicom, tmp_path):
         "FORMAT dicom\n\n%header\nREPLACE PatientName CUSTOM_FROM_RECIPE\n"
     )
     out_dir = tmp_path / "output"
-    deidentified = single_dicom.deidentify(out_dir, spec=str(recipe_file))
+    recipe = DeidRecipeFile(recipe_file).load()
+    deidentified = single_dicom.deidentify(out_dir, recipe=recipe)
     assert str(deidentified.metadata["PatientName"]) == "CUSTOM_FROM_RECIPE"
 
 
@@ -385,7 +396,7 @@ def test_deidentify_creates_output_dir(single_dicom, tmp_path):
     """Output directory should be created if it doesn't exist."""
     out_dir = tmp_path / "nested" / "output"
     single_dicom.deidentify(
-        out_dir, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+        out_dir, recipe=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
     )
     assert out_dir.is_dir()
 
@@ -393,7 +404,7 @@ def test_deidentify_creates_output_dir(single_dicom, tmp_path):
 def test_deidentify_output_is_valid_dicom(single_dicom, tmp_path):
     """Output file should be a valid DICOM that pydicom can read."""
     deidentified = single_dicom.deidentify(
-        tmp_path, spec=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
+        tmp_path, recipe=DEFAULT_RECIPE, transforms=DEFAULT_VARIABLE_BUILDERS
     )
     ds = pydicom.dcmread(str(deidentified.fspath))
     assert ds.PatientName is not None
@@ -409,3 +420,21 @@ def test_nifti_deidentify_raises(tmp_path):
     nifti = Nifti1.sample()
     with pytest.raises(FileFormatsExtrasError):
         nifti.deidentify(tmp_path)
+
+
+# ---------------------------------------------------------------------------
+# Recipe format
+# ---------------------------------------------------------------------------
+
+
+def test_recipe_type_from_implementation(single_dicom):
+    """The recipe format can be found from the deidentify implementation signature"""
+    impl = find_extra_implementation(MedicalImagingData.deidentify, type(single_dicom))
+    hint = ty.get_type_hints(impl, include_extras=True)["recipe"]
+    marker = LoadedMarker.from_hint(hint)
+    assert marker is not None and marker.format is DeidRecipeFile
+
+
+def test_recipe_wrong_type(single_dicom, tmp_path):
+    with pytest.raises(TypeError, match="Expected data loaded from DeidRecipe"):
+        single_dicom.deidentify(tmp_path, recipe=str(DEFAULT_RECIPE_PATH))
