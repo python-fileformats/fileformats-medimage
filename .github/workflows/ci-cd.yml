@@ -55,7 +55,7 @@ jobs:
     - name: Update build tools
       run: python3 -m pip install --upgrade pip
     - name: Install Package
-      run: python3 -m pip install .[test] ./extras[test]
+      run: python3 -m pip install -e .[test] -e ./extras[test]
     - name: MyPy
       run: mypy --install-types --non-interactive  --no-warn-unused-ignores .
     - name: Pytest
