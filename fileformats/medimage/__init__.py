@@ -66,7 +66,7 @@ from .contents.property.imaging_procedure.cross_sectional_procedure.mr_procedure
     T2w,
     T2Weighted,
 )
-from .deid import DeidRecipe
+from .deid import DeidRecipe, DeidRecipeX, DeidSalt, DeidTransforms
 from .dicom import (  # Vnd_Siemens_Vision,; Vnd_Siemens_VisionDir,
     DicomCollection,
     DicomDir,
@@ -102,6 +102,9 @@ __all__ = [
     "MedicalImage",
     "DicomImage",
     "DeidRecipe",
+    "DeidRecipeX",
+    "DeidSalt",
+    "DeidTransforms",
     "Analyze",
     "Mgh",
     "MghGz",

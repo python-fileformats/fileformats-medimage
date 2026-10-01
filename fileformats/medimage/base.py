@@ -69,9 +69,11 @@ class MedicalImagingData(FileSet):
             A recipe for the deidentification process, loaded from a format that depends
             on the implementation (e.g. `DeidRecipe` for DICOM), which may include
             details on which fields to remove or how to handle certain types of data.
-            Implementations annotate it with ``Loaded[<recipe format>]``, so callers can
-            find the format to load the recipe from with
-            ``LoadedMarker.from_hint(get_type_hints(find_extra_implementation(
+            Implementations annotate it with ``Loaded[<recipe format>]``, or a union of
+            them in order of preference (e.g. ``Loaded[DeidRecipeX] | Loaded[DeidRecipe]``,
+            for recipes with and without side-cars), or ``None`` if they don't accept a
+            recipe. Callers can find the formats to load the recipe from with
+            ``LoadedMarker.all_from_hint(get_type_hints(find_extra_implementation(
             MedicalImagingData.deidentify, type(image)), include_extras=True)["recipe"])``
         **kwargs: Any
             Additional format-specific keyword arguments (e.g. concurrency options),

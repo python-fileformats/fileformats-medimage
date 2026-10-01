@@ -37,7 +37,7 @@ dev = [
     "typing_extensions >= 4.6",
 ]
 test = [
-    "pytest >=6.2.5",
+    "pytest >=8.1",
     "pytest-env>=0.6.2",
     "pytest-cov>=2.12.1",
     "medimages4tests >=0.3",
