@@ -47,7 +47,7 @@ def EnsureDicomDir(dicom: DicomCollection) -> DicomDir:
 @converter(source_format=DicomCollection, target_format=NiftiGzX, compress="y")  # type: ignore
 @converter(source_format=DicomCollection, target_format=NiftiXBvec)  # type: ignore
 @converter(source_format=DicomCollection, target_format=NiftiBvec)  # type: ignore
-@converter(source_format=DicomCollection, target_format=NiftiGzBvec)  # type: ignore
+@converter(source_format=DicomCollection, target_format=NiftiGzBvec, compress="y")  # type: ignore
 @converter(source_format=DicomCollection, target_format=NiftiGzXBvec, compress="y")  # type: ignore
 @workflow.define(outputs=["out_file"])  # type: ignore
 def ExtendedDcm2niix(
