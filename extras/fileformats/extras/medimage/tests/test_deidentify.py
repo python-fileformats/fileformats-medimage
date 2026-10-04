@@ -15,6 +15,7 @@ from deid.config import DeidRecipe
 from fileformats.core import LoadedMarker, find_extra_implementation
 from fileformats.core.exceptions import FileFormatsExtrasError
 from fileformats.extras.medimage.deid_recipe import DeidRecipeWithTransforms
+from fileformats.extras.medimage.deid_transforms import DeidTransformsError
 from medimages4tests.dummy.dicom.mri.t1w.siemens.skyra.syngo_d13c import (
     get_image as get_dicom_image,
 )
@@ -30,7 +31,7 @@ from fileformats.medimage import (
 )
 
 # ---------------------------------------------------------------------------
-# Recipe, with its variable builders defined in the recipe.transforms.py side-car
+# Recipe, with its variable builders defined in the recipe.transforms.yaml side-car
 # ---------------------------------------------------------------------------
 
 DEFAULT_RECIPE_PATH = Path(__file__).parent / "recipe.dicom"
@@ -333,33 +334,61 @@ def test_transforms_side_car_custom_recipe(single_dicom, tmp_path):
     """Transforms are loaded from a side-car named after the recipe"""
     recipe_file = tmp_path / "custom.deid"
     recipe_file.write_text("FORMAT dicom\n\n%header\nREPLACE PatientName var:name\n")
-    (tmp_path / "custom.transforms.py").write_text(
-        'TRANSFORMS = {"name": lambda ds: "FROM_SIDE_CAR"}\n'
+    (tmp_path / "custom.transforms.yaml").write_text(
+        'version: "0.1"\n'
+        "variables:\n"
+        "  name: {tag: PatientID, apply: [{prefix: FROM_SIDE_CAR-}]}\n"
     )
     recipe_x = DeidRecipeX(recipe_file)
-    assert recipe_x.transforms_file.fspath == tmp_path / "custom.transforms.py"
+    assert recipe_x.transforms_file.fspath == tmp_path / "custom.transforms.yaml"
 
+    original_id = str(single_dicom.metadata["PatientID"])
     deidentified = single_dicom.deidentify(tmp_path / "output", recipe=recipe_x.load())
-    assert str(deidentified.metadata["PatientName"]) == "FROM_SIDE_CAR"
+    assert str(deidentified.metadata["PatientName"]) == f"FROM_SIDE_CAR-{original_id}"
 
 
-def test_transforms_side_car_without_transforms_dict(tmp_path):
+def test_transforms_side_car_invalid(tmp_path):
+    """Errors in the transforms are reported when the recipe is loaded, along with the
+    file they are in"""
     recipe_file = tmp_path / "custom.deid"
     recipe_file.write_text("FORMAT dicom\n\n%header\nREMOVE PatientName\n")
-    (tmp_path / "custom.transforms.py").write_text("NOT_TRANSFORMS = {}\n")
-    with pytest.raises(ValueError, match="does not define a TRANSFORMS dict"):
+    (tmp_path / "custom.transforms.yaml").write_text("variables: {}\n")
+    with pytest.raises(DeidTransformsError, match="custom.transforms.yaml.*'version'"):
         DeidRecipeX(recipe_file).load()
 
 
-def test_salt_side_car_passed_to_transforms(single_dicom, tmp_path, caplog):
-    """The key in the salt side-car is available to the transforms as SALT"""
+def test_function_side_car(single_dicom, tmp_path):
+    """Functions are applied to the field they are referenced by in the recipe"""
+    recipe_file = tmp_path / "custom.deid"
+    recipe_file.write_text(
+        "FORMAT dicom\n\n%header\nREPLACE PatientID func:hash_field\n"
+    )
+    (tmp_path / "custom.transforms.yaml").write_text(
+        'version: "0.1"\n'
+        "functions:\n"
+        "  hash_field:\n"
+        "    field: value\n"
+        "    apply:\n"
+        "      - hash: {salt: false, length: 16, namespace: {field: name}}\n"
+    )
+    original_id = str(single_dicom.metadata["PatientID"])
+    deidentified = single_dicom.deidentify(
+        tmp_path / "output", recipe=DeidRecipeX(recipe_file).load()
+    )
+    expected = hashlib.sha256(("PatientID" + original_id).encode()).hexdigest()[:16]
+    assert str(deidentified.metadata["PatientID"]) == expected
+
+
+def test_salt_side_car_used_by_hashes(single_dicom, tmp_path, caplog):
+    """The key in the salt side-car is used to salt hashes"""
     recipe_file = tmp_path / "custom.deid"
     recipe_file.write_text("FORMAT dicom\n\n%header\nREPLACE PatientName var:name\n")
-    (tmp_path / "custom.transforms.py").write_text(
-        "import hashlib\n"
-        "TRANSFORMS = {\n"
-        '    "name": lambda ds: hashlib.sha256(SALT + b"x").hexdigest()[:16]\n'
-        "}\n"
+    (tmp_path / "custom.transforms.yaml").write_text(
+        'version: "0.1"\n'
+        "variables:\n"
+        "  name:\n"
+        "    tag: PatientID\n"
+        "    apply: [{hash: {length: 16}}]\n"
     )
     salt_file = tmp_path / "custom.salt"
     salt_file.write_bytes(b"secret-key\n")
@@ -371,24 +400,32 @@ def test_salt_side_car_passed_to_transforms(single_dicom, tmp_path, caplog):
         recipe = recipe_x.load()
     assert "accessible by other users" not in caplog.text
 
+    original_id = str(single_dicom.metadata["PatientID"]).encode()
     deidentified = single_dicom.deidentify(tmp_path / "output", recipe=recipe)
-    expected = hashlib.sha256(b"secret-key" + b"x").hexdigest()[:16]
+    expected = hashlib.sha256(b"secret-key" + original_id).hexdigest()[:16]
     assert str(deidentified.metadata["PatientName"]) == expected
+
+
+def test_salted_hash_without_salt_side_car_raises(tmp_path):
+    recipe_file = tmp_path / "custom.deid"
+    recipe_file.write_text("FORMAT dicom\n\n%header\nREPLACE PatientName var:name\n")
+    (tmp_path / "custom.transforms.yaml").write_text(
+        'version: "0.1"\nvariables:\n  name: {tag: PatientID, apply: [hash]}\n'
+    )
+    with pytest.raises(DeidTransformsError, match="salt side-car"):
+        DeidRecipeX(recipe_file).load()
 
 
 def test_salt_side_car_optional_and_permissions_warning(tmp_path, caplog):
     recipe_file = tmp_path / "custom.deid"
     recipe_file.write_text("FORMAT dicom\n\n%header\nREMOVE PatientName\n")
-    (tmp_path / "custom.transforms.py").write_text(
-        "TRANSFORMS = {}\nassert SALT is None\n"
-    )
+    (tmp_path / "custom.transforms.yaml").write_text('version: "0.1"\n')
     assert DeidRecipeX(recipe_file).salt_file is None
     DeidRecipeX(recipe_file).load()
 
     salt_file = tmp_path / "custom.salt"
     salt_file.write_bytes(b"secret-key")
     salt_file.chmod(0o644)
-    (tmp_path / "custom.transforms.py").write_text("TRANSFORMS = {}\n")
     with caplog.at_level("WARNING"):
         DeidRecipeX(recipe_file).load()
     assert "accessible by other users" in caplog.text
@@ -402,15 +439,23 @@ def test_salt_side_car_optional_and_permissions_warning(tmp_path, caplog):
 def test_missing_transforms_raises():
     """Loading a recipe that references var: variables without its transforms
     side-car should raise ValueError."""
-    with pytest.raises(ValueError, match="var: variables"):
+    with pytest.raises(ValueError, match="references var:"):
         DeidRecipeFile(DEFAULT_RECIPE_PATH).load()
 
 
 def test_partial_transforms_raises():
     """Should raise ValueError when only some of the required transforms are provided."""
     partial = {"anon_patient_id": lambda _ds: "test"}
-    with pytest.raises(ValueError, match="var: variables"):
+    with pytest.raises(ValueError, match="references var:"):
         DeidRecipeWithTransforms(str(DEFAULT_RECIPE_PATH), transforms=partial)
+
+
+def test_missing_function_raises(tmp_path):
+    recipe_file = tmp_path / "custom.deid"
+    recipe_file.write_text("FORMAT dicom\n\n%header\nREPLACE PatientID func:missing\n")
+    (tmp_path / "custom.transforms.yaml").write_text('version: "0.1"\n')
+    with pytest.raises(ValueError, match="references func:"):
+        DeidRecipeX(recipe_file).load()
 
 
 def test_plain_deid_recipe_rejected(single_dicom, tmp_path):

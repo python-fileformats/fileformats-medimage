@@ -97,8 +97,32 @@ jobs:
         name: built-${{ matrix.pkg[0] }}
         path: ${{ matrix.pkg[1] }}/dist
 
-  deploy:
+  build-docs:
     needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 0
+    - name: Set up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: '3.12'
+    - name: Install package, extras and docs dependencies
+      # The extras are installed so that the classes recipes are loaded into can be
+      # documented
+      run: python3 -m pip install -e .[docs] -e ./extras
+    - name: Build documentation
+      run: |
+        cd docs
+        make html SPHINXOPTS="-W --keep-going"
+    - uses: actions/upload-artifact@v7
+      with:
+        name: built-docs
+        path: docs/build/html
+
+  deploy:
+    needs: [build, build-docs]
     runs-on: ubuntu-latest
     steps:
     - name: Download build
@@ -140,6 +164,28 @@ jobs:
       with:
         user: __token__
         password: ${{ secrets.EXTRAS_PYPI_API_TOKEN }}
+
+  deploy-docs:
+    needs: [build-docs, deploy]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download built docs
+      uses: actions/download-artifact@v8
+      with:
+        name: built-docs
+        path: docs-build
+    - name: Check for GHPAGES_DEPLOY_KEY token
+      id: deployable
+      if: github.event_name == 'release'
+      env:
+        GHPAGES_DEPLOY_KEY: "${{ secrets.GHPAGES_DEPLOY_KEY }}"
+      run: if [ -n "$GHPAGES_DEPLOY_KEY" ]; then echo "DEPLOY=true" >> $GITHUB_OUTPUT; fi
+    - name: Deploy docs to GitHub Pages
+      if: steps.deployable.outputs.DEPLOY
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GHPAGES_DEPLOY_KEY }}
+        publish_dir: docs-build
 
 # Deploy on tags if PYPI_API_TOKEN is defined in the repository secrets.
 # Secrets are not accessible in the if: condition [0], so set an output variable [1]

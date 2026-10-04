@@ -16,6 +16,7 @@ dependencies = [
     "fileformats-vendor-mrtrix3-extras >= 3.1.0a5",
     "nibabel >=5.0.0",
     "numpy >=1.20",
+    "pyyaml >=6.0",
     "medimages4tests >=0.3.0",
     "pydicom >=2.3.1",
     "pydra >= 1.0a",

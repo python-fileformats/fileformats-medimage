@@ -16,8 +16,8 @@ class DeidRecipe(UnicodeFile):
     ``deid.<format>``), so they are identified by the ``FORMAT <format>`` line they
     start with instead"""
 
-    # Loaded into a subclass of `deid.config.DeidRecipe` that also holds the variable
-    # builders for any "var:" references in the recipe (see DeidRecipeX). Given as a
+    # Loaded into a subclass of `deid.config.DeidRecipe` that also holds the transforms
+    # for any "var:"/"func:" references in the recipe (see DeidRecipeX). Given as a
     # dotted path so the class is only imported if the extras are installed
     loaded_type = "fileformats.extras.medimage.deid_recipe.DeidRecipeWithTransforms"
 
@@ -41,16 +41,18 @@ class DeidRecipe(UnicodeFile):
 
 
 class DeidTransforms(UnicodeFile):
-    """A Python module defining a ``TRANSFORMS`` dict, which maps the names of the
-    variables referenced by ``var:`` values in a `DeidRecipe` to callables that take
-    the DICOM dataset being deidentified and return the value to substitute.
+    """A YAML file declaring the values of the variables and functions referenced by
+    ``var:`` and ``func:`` values in a `DeidRecipe`, using a small expression language
+    rather than code, so that it can be safely distributed to and run at sites (see
+    the "Deid transforms specification" in the docs).
 
-    The module is given a ``SALT`` global before it is executed, which holds the key
-    loaded from the `DeidSalt` side-car of the recipe (or None if there isn't one),
-    so it can be used to salt hashed values"""
+    Expressions can read DICOM tags and environment variables, combine them with
+    templates, and transform them, e.g. truncating them or hashing them with the key
+    from the `DeidSalt` side-car of the recipe"""
 
-    ext = ".transforms.py"
-    loaded_type = dict
+    ext = ".transforms.yaml"
+    # Given as a dotted path so the class is only imported if the extras are installed
+    loaded_type = "fileformats.extras.medimage.deid_transforms.DeidTransformsSpec"
 
 
 class DeidSalt(BinaryFile):
@@ -64,11 +66,11 @@ class DeidSalt(BinaryFile):
 
 class DeidRecipeX(WithAdjacentFiles, DeidRecipe):
     """A `DeidRecipe` with a `DeidTransforms` side-car, which defines the values of the
-    variables referenced by ``var:`` values in the recipe, and optionally a `DeidSalt`
-    side-car with a key for the transforms to salt hashed values with. The side-cars
-    are named after the recipe with its extension (if any) replaced by
-    ``.transforms.py`` and ``.salt``, e.g. ``dicom-series.deid``,
-    ``dicom-series.transforms.py`` and ``dicom-series.salt``"""
+    variables and functions referenced by ``var:`` and ``func:`` values in the recipe,
+    and optionally a `DeidSalt` side-car with a key for the transforms to salt hashed
+    values with. The side-cars are named after the recipe with its extension (if any)
+    replaced by ``.transforms.yaml`` and ``.salt``, e.g. ``dicom-series.deid``,
+    ``dicom-series.transforms.yaml`` and ``dicom-series.salt``"""
 
     @validated_property
     def fspath(self) -> Path:

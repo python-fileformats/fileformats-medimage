@@ -36,6 +36,10 @@ dev = [
     "flake8-pyproject",
     "typing_extensions >= 4.6",
 ]
+docs = [
+    "sphinx >=7.0",
+    "furo >=2022.2.14.1",
+]
 test = [
     "pytest >=8.1",
     "pytest-env>=0.6.2",
@@ -49,7 +53,8 @@ test = [
 
 
 [project.urls]
-repository = "https://github.com/ArcanaFramework/fileformats-medimage"
+repository = "https://github.com/python-fileformats/fileformats-medimage"
+documentation = "https://python-fileformats.github.io/fileformats-medimage/"
 
 
 [tool.hatch.version]
