@@ -1,4 +1,4 @@
-# Values of the "var:" references in recipe.dicom (see docs/deid-transforms-0.1.md)
+# Values of the "var:" references in recipe.dicom (see the deid transforms spec in docs/source/deid_transforms.rst)
 version: "0.1"
 variables:
   # Year of birth only, e.g. 19830514 -> 19830101

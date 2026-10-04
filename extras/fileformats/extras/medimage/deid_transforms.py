@@ -1,5 +1,5 @@
 """Loads the declarative (YAML) transforms that define the values of the ``var:`` and
-``func:`` references in a deid recipe (see ``docs/deid-transforms-0.1.md``).
+``func:`` references in a deid recipe (see ``docs/source/deid_transforms.rst``).
 
 The transforms are a small, closed expression language rather than Python code, so
 that recipes and their transforms can be distributed to and run at sites (e.g. on edge

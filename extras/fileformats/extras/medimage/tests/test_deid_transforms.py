@@ -2,6 +2,7 @@
 
 import hashlib
 import re
+import textwrap
 import typing as ty
 from pathlib import Path
 
@@ -405,13 +406,18 @@ def test_extension_keys_are_ignored(dataset):
     assert load_transforms(spec).variables["v"](dataset) == "P001"
 
 
-SPEC_DOC = Path(__file__).parents[5] / "docs" / "deid-transforms-0.1.md"
+SPEC_DOC = Path(__file__).parents[5] / "docs" / "source" / "deid_transforms.rst"
 
 
 @pytest.mark.skipif(not SPEC_DOC.exists(), reason="spec document isn't available")
 def test_spec_examples_are_valid(dataset):
     """The complete examples in the spec document load and evaluate"""
-    blocks = re.findall(r"```yaml\n(.*?)```", SPEC_DOC.read_text(), re.DOTALL)
+    blocks = [
+        textwrap.dedent(b)
+        for b in re.findall(
+            r"\.\. code-block:: yaml\n\n((?:    .*\n|\n)+)", SPEC_DOC.read_text()
+        )
+    ]
     # the outline of the document structure has "<placeholders>" rather than values
     examples = [yaml.safe_load(b) for b in blocks if "<" not in b]
     examples = [e for e in examples if isinstance(e, dict) and "version" in e]

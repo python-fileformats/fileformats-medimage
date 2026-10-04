@@ -44,7 +44,7 @@ class DeidTransforms(UnicodeFile):
     """A YAML file declaring the values of the variables and functions referenced by
     ``var:`` and ``func:`` values in a `DeidRecipe`, using a small expression language
     rather than code, so that it can be safely distributed to and run at sites (see
-    ``docs/deid-transforms-0.1.md`` for the spec).
+    the "Deid transforms specification" in the docs).
 
     Expressions can read DICOM tags and environment variables, combine them with
     templates, and transform them, e.g. truncating them or hashing them with the key
