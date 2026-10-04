@@ -1,28 +1,30 @@
-from pathlib import Path
 import json
-import typing as ty
 import tempfile
-from fileformats.core import converter
-from pydra.compose import python, workflow
-from fileformats.medimage.dicom import DicomDir, DicomCollection, DicomSeries
+import typing as ty
+from pathlib import Path
+
 from fileformats.application import Json
-from fileformats.medimage import (
-    MedicalImage,
-    Analyze,
-    Nifti,
-    NiftiGz,
-    NiftiX,
-    NiftiGzX,
-    NiftiXBvec,
-    NiftiBvec,
-    NiftiGzBvec,
-    NiftiGzXBvec,
-)
+from fileformats.core import converter
 from fileformats.core.typing import PathType
+from fileformats.generic import Directory, File  # noqa: F401
+from fileformats.vendor.mrtrix3.medimage import ImageIn, ImageOut, Tracks  # noqa: F401
+from pydra.compose import python, workflow
 from pydra.tasks.dcm2niix import Dcm2Niix
 from pydra.tasks.mrtrix3.v3_1 import MrConvert
-from fileformats.generic import File, Directory  # noqa: F401
-from fileformats.vendor.mrtrix3.medimage import ImageIn, ImageOut, Tracks  # noqa: F401
+
+from fileformats.medimage import (
+    Analyze,
+    MedicalImage,
+    Nifti,
+    NiftiBvec,
+    NiftiGz,
+    NiftiGzBvec,
+    NiftiGzX,
+    NiftiGzXBvec,
+    NiftiX,
+    NiftiXBvec,
+)
+from fileformats.medimage.dicom import DicomCollection, DicomDir, DicomSeries
 
 
 @python.define  # type: ignore
@@ -32,7 +34,7 @@ def EnsureDicomDir(dicom: DicomCollection) -> DicomDir:
         dicom.copy(dicom_dir_fspath, mode=DicomDir.CopyMode.link)
         dicom = DicomDir(dicom_dir_fspath)
     elif not isinstance(dicom, DicomDir):
-        raise RuntimeError(
+        raise TypeError(
             "Unrecognised input to ensure_dicom_dir, should be DicomSeries or DicomDir "
             f"not {dicom}"
         )
@@ -45,7 +47,7 @@ def EnsureDicomDir(dicom: DicomCollection) -> DicomDir:
 @converter(source_format=DicomCollection, target_format=NiftiGzX, compress="y")  # type: ignore
 @converter(source_format=DicomCollection, target_format=NiftiXBvec)  # type: ignore
 @converter(source_format=DicomCollection, target_format=NiftiBvec)  # type: ignore
-@converter(source_format=DicomCollection, target_format=NiftiGzBvec)  # type: ignore
+@converter(source_format=DicomCollection, target_format=NiftiGzBvec, compress="y")  # type: ignore
 @converter(source_format=DicomCollection, target_format=NiftiGzXBvec, compress="y")  # type: ignore
 @workflow.define(outputs=["out_file"])  # type: ignore
 def ExtendedDcm2niix(
@@ -194,7 +196,7 @@ def CollectDcm2niixOutputs(
                 "Both bvec and bval files must be present for diffusion NIfTI outputs"
             )
         if klass is NiftiGz:
-            klass = NiftiGzXBvec
+            klass = NiftiGzBvec
         elif klass is NiftiGzX:
             klass = NiftiGzXBvec
         elif klass is NiftiX:

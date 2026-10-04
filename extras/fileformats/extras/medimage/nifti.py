@@ -1,28 +1,30 @@
-from pathlib import Path
-import typing as ty
-import nibabel
 import typing  # noqa: F401
+import typing as ty
+from pathlib import Path
+
+import medimages4tests.dummy.nifti
+import medimages4tests.mri.neuro.bold
+import medimages4tests.mri.neuro.dwi
+import medimages4tests.mri.neuro.t1w
+import nibabel
 import numpy.typing  # noqa: F401
 from fileformats.core import FileSet, SampleFileGenerator, extra_implementation
+
 from fileformats.medimage import (
+    Brain,
+    Dmri,
+    Fmri,
     MedicalImage,
     Nifti,
-    NiftiGz,
     Nifti1,
+    NiftiGz,
     NiftiGzX,
     NiftiGzXBvec,
-    NiftiXBvec,
     NiftiX,
+    NiftiXBvec,
     T1w,
-    Fmri,
-    Dmri,
-    Brain,
 )
 from fileformats.medimage.base import DataArrayType
-import medimages4tests.dummy.nifti
-import medimages4tests.mri.neuro.t1w
-import medimages4tests.mri.neuro.dwi
-import medimages4tests.mri.neuro.bold
 
 
 @extra_implementation(FileSet.read_metadata)
@@ -191,16 +193,40 @@ def dmri_nifti_x_generate_sample_data(
 def _get_t1w_nifti_gz_x(generator: SampleFileGenerator) -> ty.List[Path]:
     sample = generator.seed if generator.seed else "ds002014-01"
     fspaths = medimages4tests.mri.neuro.t1w.get_image(sample=sample)
-    return list(NiftiGzX(fspaths).copy(generator.dest_dir, mode=NiftiGzX.CopyMode.link_or_copy, new_stem=generator.fname_stem).fspaths)
+    return list(
+        NiftiGzX(fspaths)
+        .copy(
+            generator.dest_dir,
+            mode=NiftiGzX.CopyMode.link_or_copy,
+            new_stem=generator.fname_stem,
+        )
+        .fspaths
+    )
 
 
 def _get_fmri_nifti_gz_x(generator: SampleFileGenerator) -> ty.List[Path]:
     sample = generator.seed if generator.seed else "ds002014-01"
     fspaths = medimages4tests.mri.neuro.bold.get_image(sample=sample)
-    return list(NiftiGzX(fspaths).copy(generator.dest_dir, mode=NiftiGzX.CopyMode.link_or_copy, new_stem=generator.fname_stem).fspaths)
+    return list(
+        NiftiGzX(fspaths)
+        .copy(
+            generator.dest_dir,
+            mode=NiftiGzX.CopyMode.link_or_copy,
+            new_stem=generator.fname_stem,
+        )
+        .fspaths
+    )
 
 
 def _get_dmri_nifti_gz_x(generator: SampleFileGenerator) -> ty.List[Path]:
     sample = generator.seed if generator.seed else "ds004024-CON031"
     fspaths = medimages4tests.mri.neuro.dwi.get_image(sample=sample)
-    return list(NiftiGzX(fspaths).copy(generator.dest_dir, mode=NiftiGzX.CopyMode.link_or_copy, new_stem=generator.fname_stem).fspaths)
+    return list(
+        NiftiGzX(fspaths)
+        .copy(
+            generator.dest_dir,
+            mode=NiftiGzX.CopyMode.link_or_copy,
+            new_stem=generator.fname_stem,
+        )
+        .fspaths
+    )
