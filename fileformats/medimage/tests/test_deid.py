@@ -26,8 +26,8 @@ def test_deid_recipe_missing_format(tmp_path):
 def test_deid_recipe_x_side_cars(tmp_path):
     recipe = tmp_path / "dicom-series.deid"
     recipe.write_text("FORMAT dicom\n")
-    transforms = tmp_path / "dicom-series.transforms.py"
-    transforms.write_text("TRANSFORMS = {}\n")
+    transforms = tmp_path / "dicom-series.transforms.yaml"
+    transforms.write_text('version: "0.1"\n')
     (tmp_path / "dicom-series.other").write_text("not a side-car")
 
     recipe_x = DeidRecipeX(recipe)

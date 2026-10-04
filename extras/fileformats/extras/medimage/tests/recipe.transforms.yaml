@@ -1,0 +1,31 @@
+# Values of the "var:" references in recipe.dicom (see docs/deid-transforms-0.1.md)
+version: "0.1"
+variables:
+  # Year of birth only, e.g. 19830514 -> 19830101
+  anon_birth_date:
+    tag: PatientBirthDate
+    default: ""
+    apply:
+      - truncate: 4
+      - suffix: "0101"
+  anon_patient_name:
+    tag: PatientID
+    default: ""
+  anon_patient_id:
+    template:
+      format: "{patient_id}-{acquisition_time}"
+      values:
+        patient_id: {tag: PatientID}
+        acquisition_time: {tag: AcquisitionTime}
+  patient_comments:
+    template:
+      format: "Project={project};Subject={subject};Session={subject}-{acquisition_time}"
+      values:
+        project: {tag: ReferringPhysicianName}
+        subject: {tag: PatientID}
+        acquisition_time: {tag: AcquisitionTime}
+  # Number of days to shift dates by
+  date_jitter:
+    env: DEID_DATE_JITTER
+    default: 0
+    apply: [to_int]
