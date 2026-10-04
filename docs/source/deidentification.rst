@@ -80,7 +80,7 @@ Recipe formats
 Two formats are defined for deid recipes:
 
 ``DeidRecipe`` (``medimage/deid-recipe``)
-    a deid recipe file on its own. Recipes don't have a standard extension (they are
+    a ``deid`` recipe file on its own. Recipes don't have a standard extension (they are
     typically named ``deid.dicom`` or ``<name>.deid``), so they are identified by the
     ``FORMAT <format>`` line they start with. The recipe can't use ``var:`` or
     ``func:`` values, since nothing defines them.
