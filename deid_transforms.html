@@ -1,0 +1,740 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="API" href="api.html"><link rel="prev" title="Deidentification" href="deidentification.html">
+        <link rel="prefetch" href="_static/logo_small.png" as="image">
+
+    <link rel="shortcut icon" href="_static/favicon.png"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Deid transforms specification, version 0.1 - FileFormats-Medimage v0.15.2</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=beddf052" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #ffffff;
+  --color-code-foreground: black;
+  --color-brand-primary: #0e691b;
+  --color-brand-content: #0e691b;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #111111;
+  --color-code-foreground: #ffffff;
+  --color-brand-primary: #5db754;
+  --color-brand-content: #5db754;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #111111;
+  --color-code-foreground: #ffffff;
+  --color-brand-primary: #5db754;
+  --color-brand-content: #5db754;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">FileFormats-Medimage v0.15.2</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/logo_small.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">FileFormats-Medimage v0.15.2</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extras.html">Extras</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deidentification.html">Deidentification</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Deid transforms specification, version 0.1</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Available Types</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="reference/dicom.html">DICOM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/nifti.html">NIfTI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/diffusion.html">Diffusion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/other_images.html">Other image formats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/raw.html">Raw data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/deid.html">Deidentification recipes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/classifiers.html">Classifiers</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/deid_transforms.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="deid-transforms-specification-version-0-1">
+<h1>Deid transforms specification, version 0.1<a class="headerlink" href="#deid-transforms-specification-version-0-1" title="Link to this heading">¶</a></h1>
+<p>A <em>transforms</em> file declares how the values of the <code class="docutils literal notranslate"><span class="pre">var:</span></code> and <code class="docutils literal notranslate"><span class="pre">func:</span></code> references
+in a <a class="reference external" href="https://pydicom.github.io/deid/">deid</a> recipe are computed. It is a YAML
+side-car to the recipe (see <code class="docutils literal notranslate"><span class="pre">DeidRecipeX</span></code> in <code class="docutils literal notranslate"><span class="pre">fileformats.medimage</span></code>).</p>
+<p>They are written in a small, closed expression language instead of Python. Recipes and their transforms
+can be distributed to sites and run there, for example on edge devices, so they must
+not be able to execute arbitrary code. A transforms file can only:</p>
+<ul class="simple">
+<li><p>read the DICOM dataset being deidentified,</p></li>
+<li><p>read environment variables,</p></li>
+<li><p>read the salt side-car, but only as the key of a salted hash, never as a value,</p></li>
+<li><p>combine and transform those values with the operations listed below.</p></li>
+</ul>
+<p>It can’t import modules, access the file system or network, or call arbitrary
+functions.</p>
+<p>Status: <strong>0.1, initial draft.</strong> It is designed to be extended (see <a class="reference internal" href="#versioning-and-extensibility"><span class="std std-ref">Versioning and extensibility</span></a>).</p>
+<section id="files">
+<h2>Files<a class="headerlink" href="#files" title="Link to this heading">¶</a></h2>
+<p>A recipe and its side-cars share a stem:</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File</p></th>
+<th class="head"><p>Format</p></th>
+<th class="head"><p>Required</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;.deid</span></code> (or any other name, e.g. <code class="docutils literal notranslate"><span class="pre">deid.dicom</span></code>)</p></td>
+<td><p>deid recipe, starting with <code class="docutils literal notranslate"><span class="pre">FORMAT</span> <span class="pre">&lt;format&gt;</span></code></p></td>
+<td><p>yes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;.transforms.yaml</span></code></p></td>
+<td><p>transforms, this spec</p></td>
+<td><p>yes for <code class="docutils literal notranslate"><span class="pre">DeidRecipeX</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;.salt</span></code></p></td>
+<td><p>secret key for salted hashes; surrounding whitespace is stripped; should be readable only by the user running the deidentification</p></td>
+<td><p>only if a salted hash is used</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>For example: <code class="docutils literal notranslate"><span class="pre">dicom-series.deid</span></code>, <code class="docutils literal notranslate"><span class="pre">dicom-series.transforms.yaml</span></code>, <code class="docutils literal notranslate"><span class="pre">dicom-series.salt</span></code>.</p>
+</section>
+<section id="document-structure">
+<h2>Document structure<a class="headerlink" href="#document-structure" title="Link to this heading">¶</a></h2>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">"0.1"</span><span class="w">            </span><span class="c1"># required, quote it so YAML doesn't read it as a number</span>
+<span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">free text</span><span class="w">    </span><span class="c1"># optional</span>
+<span class="nt">variables</span><span class="p">:</span><span class="w">                </span><span class="c1"># optional, the values of var:&lt;name&gt; references</span>
+<span class="w">  </span><span class="nt">&lt;name&gt;</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;expression&gt;</span>
+<span class="nt">functions</span><span class="p">:</span><span class="w">                </span><span class="c1"># optional, the values of func:&lt;name&gt; references</span>
+<span class="w">  </span><span class="nt">&lt;name&gt;</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;expression&gt;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Names match <code class="docutils literal notranslate"><span class="pre">[A-Za-z_][A-Za-z0-9_]*</span></code>.</p></li>
+<li><p>Every <code class="docutils literal notranslate"><span class="pre">var:</span></code> and <code class="docutils literal notranslate"><span class="pre">func:</span></code> reference in the recipe must be defined here, or the
+recipe fails to load. <code class="docutils literal notranslate"><span class="pre">deid_func:</span></code> references are deid’s built-ins (e.g.
+<code class="docutils literal notranslate"><span class="pre">deid_func:dicom_uuid</span></code>, <code class="docutils literal notranslate"><span class="pre">deid_func:jitter</span></code>) and aren’t defined here.</p></li>
+<li><p>Unknown keys are errors, except keys starting with <code class="docutils literal notranslate"><span class="pre">x-</span></code>, which are ignored
+wherever they appear (see <a class="reference internal" href="#versioning-and-extensibility"><span class="std std-ref">Versioning and extensibility</span></a>).</p></li>
+</ul>
+<section id="variables-and-functions">
+<h3>Variables and functions<a class="headerlink" href="#variables-and-functions" title="Link to this heading">¶</a></h3>
+<p>A <strong>variable</strong> is evaluated once per DICOM file, before deid applies the recipe,
+and its value is substituted wherever <code class="docutils literal notranslate"><span class="pre">var:&lt;name&gt;</span></code> appears. Use variables for
+values derived from the dataset as a whole, e.g. <code class="docutils literal notranslate"><span class="pre">REPLACE</span> <span class="pre">PatientID</span> <span class="pre">var:anon_patient_id</span></code>.</p>
+<p>A <strong>function</strong> is evaluated by deid each time a <code class="docutils literal notranslate"><span class="pre">func:&lt;name&gt;</span></code> reference is
+applied to a field, e.g. <code class="docutils literal notranslate"><span class="pre">REPLACE</span> <span class="pre">endswith:ID</span> <span class="pre">func:hash_value</span></code>. It can also read
+the field it is applied to (see the <a class="reference internal" href="#field-functions-only"><span class="std std-ref">field</span></a> source).
+Evaluating to <code class="docutils literal notranslate"><span class="pre">null</span></code> (e.g. via <code class="docutils literal notranslate"><span class="pre">blank_if_empty</span></code>) blanks the field.</p>
+<p>Transforms are only for values that have to be <strong>computed</strong>. Constants are written
+in the recipe itself, e.g. <code class="docutils literal notranslate"><span class="pre">REPLACE</span> <span class="pre">PatientName</span> <span class="pre">ANONYMOUS</span></code>, <code class="docutils literal notranslate"><span class="pre">JITTER</span> <span class="pre">StudyDate</span> <span class="pre">10</span></code>,
+<code class="docutils literal notranslate"><span class="pre">BLANK</span> <span class="pre">PatientName</span></code> or <code class="docutils literal notranslate"><span class="pre">KEEP</span> <span class="pre">PatientID</span></code>, so a variable or function that is just a
+constant (including <code class="docutils literal notranslate"><span class="pre">null</span></code>) is an error.</p>
+</section>
+</section>
+<section id="expressions">
+<h2>Expressions<a class="headerlink" href="#expressions" title="Link to this heading">¶</a></h2>
+<p>Each variable and function is defined by an expression: a mapping with exactly one
+<em>source</em> key, which says where the value comes from, plus optionally:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">default:</span></code> an argument used if the source’s value is missing (<code class="docutils literal notranslate"><span class="pre">null</span></code>) or empty (<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>),</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">apply:</span></code> a list of <em>operations</em> applied to the value in order.</p></li>
+</ul>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">anon_birth_date</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PatientBirthDate</span><span class="w">      </span><span class="c1"># source</span>
+<span class="w">  </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="s">""</span><span class="w">                </span><span class="c1"># if the tag is absent or empty</span>
+<span class="w">  </span><span class="nt">apply</span><span class="p">:</span><span class="w">                     </span><span class="c1"># then, in order</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">truncate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">suffix</span><span class="p">:</span><span class="w"> </span><span class="s">"0101"</span>
+</pre></div>
+</div>
+<p>How an expression is evaluated:</p>
+<ol class="arabic simple">
+<li><p>The source produces a value. It may be <code class="docutils literal notranslate"><span class="pre">null</span></code>, e.g. a missing tag or unset
+environment variable.</p></li>
+<li><p>If <code class="docutils literal notranslate"><span class="pre">default</span></code> is given and the value is <code class="docutils literal notranslate"><span class="pre">null</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>, the default expression’s
+value is used instead.</p></li>
+<li><p>Each operation in <code class="docutils literal notranslate"><span class="pre">apply</span></code> is applied in turn. Unless stated otherwise, an
+operation passes <code class="docutils literal notranslate"><span class="pre">null</span></code> through unchanged, so a missing value stays missing
+and isn’t, for example, hashed.</p></li>
+</ol>
+<p>An operation is written as its name if it takes no arguments (<code class="docutils literal notranslate"><span class="pre">-</span> <span class="pre">upper</span></code>), or as a
+single-key mapping from its name to its arguments (<code class="docutils literal notranslate"><span class="pre">-</span> <span class="pre">truncate:</span> <span class="pre">4</span></code>,
+<code class="docutils literal notranslate"><span class="pre">-</span> <span class="pre">hash:</span> <span class="pre">{length:</span> <span class="pre">16}</span></code>).</p>
+<p>Wherever an argument is described as an <em>expression</em> below (including <code class="docutils literal notranslate"><span class="pre">default:</span></code>
+and template values), it can be either a literal (a YAML scalar: string, number,
+boolean or <code class="docutils literal notranslate"><span class="pre">null</span></code>) or a nested expression mapping.</p>
+<section id="sources">
+<h3>Sources<a class="headerlink" href="#sources" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Source</p></th>
+<th class="head"><p>Argument</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tag</span></code></p></td>
+<td><p>DICOM keyword (<code class="docutils literal notranslate"><span class="pre">PatientID</span></code>) or tag (<code class="docutils literal notranslate"><span class="pre">(0010,0020)</span></code>, <code class="docutils literal notranslate"><span class="pre">0010,0020</span></code>, <code class="docutils literal notranslate"><span class="pre">00100020</span></code>)</p></td>
+<td><p>the element’s value as a string, or <code class="docutils literal notranslate"><span class="pre">null</span></code> if absent. Multi-valued elements are joined with <code class="docutils literal notranslate"><span class="pre">\</span></code>. Person names are in DICOM form, e.g. <code class="docutils literal notranslate"><span class="pre">Doe^Jane</span></code>. Unknown keywords are an error when the transforms are loaded</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">env</span></code></p></td>
+<td><p>environment variable name</p></td>
+<td><p>its value, or <code class="docutils literal notranslate"><span class="pre">null</span></code> if unset</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">template</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{format:</span> <span class="pre">&lt;string&gt;,</span> <span class="pre">values:</span> <span class="pre">{&lt;name&gt;:</span> <span class="pre">&lt;expression&gt;}}</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">format</span></code> with each <code class="docutils literal notranslate"><span class="pre">{name}</span></code> placeholder replaced by the value of that expression (<code class="docutils literal notranslate"><span class="pre">null</span></code> → <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>). <code class="docutils literal notranslate"><span class="pre">{{</span></code> and <code class="docutils literal notranslate"><span class="pre">}}</span></code> are literal braces. Placeholders are plain names only (no attribute or index access), and every placeholder must be defined in <code class="docutils literal notranslate"><span class="pre">values</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">field</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">value</span></code> or <code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p><strong>functions only</strong>: the current value of the field the function is applied to (as a string, as for <code class="docutils literal notranslate"><span class="pre">tag</span></code>), or its keyword</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="field-functions-only">
+<h4><code class="docutils literal notranslate"><span class="pre">field</span></code> (functions only)<a class="headerlink" href="#field-functions-only" title="Link to this heading">¶</a></h4>
+<p>deid calls a function as <code class="docutils literal notranslate"><span class="pre">func(item,</span> <span class="pre">value,</span> <span class="pre">field,</span> <span class="pre">dicom)</span></code>. Note that <code class="docutils literal notranslate"><span class="pre">value</span></code> is the
+text from the recipe (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;func:hash_value&quot;</span></code>), <em>not</em> the field’s current value.
+The <code class="docutils literal notranslate"><span class="pre">field</span></code> source gives the field’s actual current value and its keyword. For
+<code class="docutils literal notranslate"><span class="pre">ADD</span></code> actions, where the field doesn’t exist yet, <code class="docutils literal notranslate"><span class="pre">field:</span> <span class="pre">name</span></code> is the tag being
+added and <code class="docutils literal notranslate"><span class="pre">field:</span> <span class="pre">value</span></code> is <code class="docutils literal notranslate"><span class="pre">null</span></code>.</p>
+</section>
+</section>
+<section id="operations">
+<h3>Operations<a class="headerlink" href="#operations" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Operation</p></th>
+<th class="head"><p>Arguments</p></th>
+<th class="head"><p>Result</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">truncate</span></code></p></td>
+<td><p>non-negative integer <em>n</em></p></td>
+<td><p>the first <em>n</em> characters</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">slice</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{start:</span> <span class="pre">int,</span> <span class="pre">stop:</span> <span class="pre">int}</span></code> (both optional, may be negative)</p></td>
+<td><p>the characters <code class="docutils literal notranslate"><span class="pre">start</span></code> to <code class="docutils literal notranslate"><span class="pre">stop</span></code>, with Python slice semantics</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">prefix</span></code></p></td>
+<td><p>expression</p></td>
+<td><p>its value prepended (<code class="docutils literal notranslate"><span class="pre">null</span></code> → <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">suffix</span></code></p></td>
+<td><p>expression</p></td>
+<td><p>its value appended (<code class="docutils literal notranslate"><span class="pre">null</span></code> → <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">upper</span></code>, <code class="docutils literal notranslate"><span class="pre">lower</span></code>, <code class="docutils literal notranslate"><span class="pre">strip</span></code></p></td>
+<td><p>—</p></td>
+<td><p>upper-cased, lower-cased, surrounding whitespace removed</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">replace</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{old:</span> <span class="pre">string,</span> <span class="pre">new:</span> <span class="pre">string}</span></code></p></td>
+<td><p>every occurrence of <code class="docutils literal notranslate"><span class="pre">old</span></code> replaced by <code class="docutils literal notranslate"><span class="pre">new</span></code> (literal, not a regex)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">default</span></code></p></td>
+<td><p>expression</p></td>
+<td><p>its value if the value so far is <code class="docutils literal notranslate"><span class="pre">null</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>, i.e. like the <code class="docutils literal notranslate"><span class="pre">default:</span></code> key, but at any point in the pipeline</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">blank_if_empty</span></code></p></td>
+<td><p>—</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">null</span></code> if the value is <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> (in a function, <code class="docutils literal notranslate"><span class="pre">null</span></code> blanks the field)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">to_int</span></code></p></td>
+<td><p>—</p></td>
+<td><p>the value as an integer, e.g. for <code class="docutils literal notranslate"><span class="pre">JITTER</span> <span class="pre">...</span> <span class="pre">var:date_jitter</span></code>. <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> → <code class="docutils literal notranslate"><span class="pre">null</span></code>; other non-integers are an error</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">to_str</span></code></p></td>
+<td><p>—</p></td>
+<td><p>the value as a string</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hash</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{algorithm,</span> <span class="pre">length,</span> <span class="pre">salt,</span> <span class="pre">namespace}</span></code>, all optional</p></td>
+<td><p>the hex digest of <code class="docutils literal notranslate"><span class="pre">salt</span> <span class="pre">+</span> <span class="pre">namespace</span> <span class="pre">+</span> <span class="pre">value</span></code> (see below)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="hash">
+<h4><code class="docutils literal notranslate"><span class="pre">hash</span></code><a class="headerlink" href="#hash" title="Link to this heading">¶</a></h4>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Argument</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">algorithm</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sha256</span></code></p></td>
+<td><p>one of <code class="docutils literal notranslate"><span class="pre">sha256</span></code>, <code class="docutils literal notranslate"><span class="pre">sha512</span></code>, <code class="docutils literal notranslate"><span class="pre">blake2b</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">length</span></code></p></td>
+<td><p>full digest</p></td>
+<td><p>truncate the hex digest to this many characters. Mind the VR of the target field, e.g. <code class="docutils literal notranslate"><span class="pre">SH</span></code> fields such as <code class="docutils literal notranslate"><span class="pre">AccessionNumber</span></code> are limited to 16 characters, <code class="docutils literal notranslate"><span class="pre">LO</span></code> fields such as <code class="docutils literal notranslate"><span class="pre">PatientID</span></code> to 64</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">salt</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">true</span></code></p></td>
+<td><p>prefix the input with the key from the <code class="docutils literal notranslate"><span class="pre">.salt</span></code> side-car. If <code class="docutils literal notranslate"><span class="pre">true</span></code> and the recipe has no salt side-car, the transforms <strong>fail to load</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">namespace</span></code></p></td>
+<td><p>none</p></td>
+<td><p>an expression whose value is put between the salt and the value. Use it to hash the same identifier differently in different fields so they can’t be linked, e.g. <code class="docutils literal notranslate"><span class="pre">namespace:</span> <span class="pre">AccessionNumber</span></code>, or in a function <code class="docutils literal notranslate"><span class="pre">namespace:</span> <span class="pre">{field:</span> <span class="pre">name}</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The input is the UTF-8 encoding of <code class="docutils literal notranslate"><span class="pre">namespace</span> <span class="pre">+</span> <span class="pre">value</span></code>, prefixed by the raw salt
+bytes. Salting is on by default because an unsalted hash of an identifier can be
+reversed by hashing candidate identifiers. Turning it off (<code class="docutils literal notranslate"><span class="pre">salt:</span> <span class="pre">false</span></code>) should be
+a deliberate choice.</p>
+</section>
+</section>
+</section>
+<section id="errors">
+<h2>Errors<a class="headerlink" href="#errors" title="Link to this heading">¶</a></h2>
+<p>Transforms are validated and compiled when the recipe is loaded, i.e. before any
+file is deidentified. Errors give their location, e.g.
+<code class="docutils literal notranslate"><span class="pre">variables.v.template.values.a.apply[0].truncate:</span> <span class="pre">expected</span> <span class="pre">a</span> <span class="pre">non-negative</span> <span class="pre">integer</span></code>.
+Loading fails when:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">version</span></code> is missing or not supported,</p></li>
+<li><p>a variable or function is a constant rather than an expression,</p></li>
+<li><p>there are unknown keys, sources or operations, or invalid arguments,</p></li>
+<li><p>a tag keyword is unknown,</p></li>
+<li><p>a template placeholder isn’t defined,</p></li>
+<li><p>a salted hash is used without a salt side-car,</p></li>
+<li><p>the recipe references a <code class="docutils literal notranslate"><span class="pre">var:</span></code>/<code class="docutils literal notranslate"><span class="pre">func:</span></code> that isn’t defined.</p></li>
+</ul>
+<p>Errors raised while evaluating a <strong>variable</strong> for a particular file (e.g.
+<code class="docutils literal notranslate"><span class="pre">to_int</span></code> of a non-integer) are logged as warnings, and that variable isn’t defined
+for that file. deid then skips the actions that reference it.</p>
+</section>
+<section id="versioning-and-extensibility">
+<h2>Versioning and extensibility<a class="headerlink" href="#versioning-and-extensibility" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">version</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;&lt;major&gt;.&lt;minor&gt;&quot;</span></code>. A loader supports a specific set of versions
+and <strong>rejects</strong> any others. Transforms that use features a site doesn’t support
+fail loudly instead of being partially applied.</p></li>
+<li><p><strong>Minor versions only add things</strong>: new sources, operations, arguments with
+defaults that keep the old behaviour, or new top-level sections. A loader that
+supports 0.*n* also loads 0.*m* for all <em>m</em> ≤ <em>n</em>.</p></li>
+<li><p><strong>Major versions</strong> may change or remove things.</p></li>
+<li><p>Unknown keys are always errors, so a typo can’t silently change how data is
+deidentified. Keys starting with <code class="docutils literal notranslate"><span class="pre">x-</span></code> are reserved for tools and annotations
+(e.g. <code class="docutils literal notranslate"><span class="pre">x-owner</span></code>, <code class="docutils literal notranslate"><span class="pre">x-reviewed-by</span></code>) and are ignored by loaders.</p></li>
+<li><p>In the reference implementation (<code class="docutils literal notranslate"><span class="pre">fileformats.extras.medimage.deid_transforms</span></code>),
+sources and operations live in the <code class="docutils literal notranslate"><span class="pre">SOURCES</span></code> and <code class="docutils literal notranslate"><span class="pre">OPERATIONS</span></code> registries.
+Adding one is a matter of registering a factory that validates its arguments when
+the transforms are loaded and returns the callable used at evaluation time.</p></li>
+</ul>
+<section id="candidates-for-future-versions">
+<h3>Candidates for future versions<a class="headerlink" href="#candidates-for-future-versions" title="Link to this heading">¶</a></h3>
+<p>These are not part of 0.1, and are listed to guide extensions:</p>
+<ul class="simple">
+<li><p><strong>Date/time operations</strong>: parse a DA/DT/TM value and reformat it, shift it by an
+expression’s number of days, or keep only some of it (e.g. year). Today a
+birth date reduced to a year is done with <code class="docutils literal notranslate"><span class="pre">truncate</span></code> + <code class="docutils literal notranslate"><span class="pre">suffix</span></code>.</p></li>
+<li><p><strong>Regular-expression ``replace``/``match``</strong>, with a bounded engine to avoid
+catastrophic backtracking on hostile input.</p></li>
+<li><p><strong>Conditionals</strong>, e.g. <code class="docutils literal notranslate"><span class="pre">if:</span> <span class="pre">{tag:</span> <span class="pre">X,</span> <span class="pre">equals:</span> <span class="pre">Y},</span> <span class="pre">then:</span> <span class="pre">...,</span> <span class="pre">else:</span> <span class="pre">...</span></code>, and
+first-non-empty selection.</p></li>
+<li><p><strong>Lookup tables</strong> from a side-car (e.g. CSV mapping site IDs to pseudonyms), for
+re-identification workflows such as <code class="docutils literal notranslate"><span class="pre">ais_deid.dicom.header_reid</span></code>.</p></li>
+<li><p><strong>Deterministic UID generation</strong> from a hash, e.g. <code class="docutils literal notranslate"><span class="pre">to_uid:</span> <span class="pre">{root:</span> <span class="pre">1.2.826...}</span></code>,
+as a stable alternative to deid’s random <code class="docutils literal notranslate"><span class="pre">deid_func:dicom_uuid</span></code>.</p></li>
+<li><p><strong>Sequence/nested element access</strong> in <code class="docutils literal notranslate"><span class="pre">tag</span></code>, e.g.
+<code class="docutils literal notranslate"><span class="pre">(0008,1110)[0].(0008,1155)</span></code>.</p></li>
+<li><p>A <strong>JSON Schema</strong> for the document, for editor validation.</p></li>
+</ul>
+</section>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h2>
+<section id="xnat-ingest-default-dicom-series-transforms-yaml">
+<h3>xnat-ingest default (<code class="docutils literal notranslate"><span class="pre">dicom-series.transforms.yaml</span></code>)<a class="headerlink" href="#xnat-ingest-default-dicom-series-transforms-yaml" title="Link to this heading">¶</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">"0.1"</span>
+<span class="nt">variables</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Year of birth only, e.g. 19830514 -&gt; 19830101</span>
+<span class="w">  </span><span class="nt">anon_birth_date</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PatientBirthDate</span>
+<span class="w">    </span><span class="nt">default</span><span class="p">:</span><span class="w"> </span><span class="s">""</span>
+<span class="w">    </span><span class="nt">apply</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[{</span><span class="nt">truncate</span><span class="p">:</span><span class="w"> </span><span class="nv">4</span><span class="p p-Indicator">},</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">suffix</span><span class="p">:</span><span class="w"> </span><span class="s">"0101"</span><span class="p p-Indicator">}]</span>
+<span class="w">  </span><span class="nt">anon_patient_name</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="nv">PatientID</span><span class="p p-Indicator">,</span><span class="nt"> default</span><span class="p">:</span><span class="w"> </span><span class="s">""</span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">anon_patient_id</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">template</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="s">"{patient_id}-{acquisition_time}"</span>
+<span class="w">      </span><span class="nt">values</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">patient_id</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="nv">PatientID</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="nt">acquisition_time</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="nv">AcquisitionTime</span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">date_jitter</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">env</span><span class="p">:</span><span class="w"> </span><span class="nv">DEID_DATE_JITTER</span><span class="p p-Indicator">,</span><span class="nt"> default</span><span class="p">:</span><span class="w"> </span><span class="nv">10</span><span class="p p-Indicator">,</span><span class="nt"> apply</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">to_int</span><span class="p p-Indicator">]}</span>
+<span class="w">  </span><span class="nt">patient_comments</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">template</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="s">"Project={project};Subject={subject};Session={subject}-{acquisition_time}"</span>
+<span class="w">      </span><span class="nt">values</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="nv">ReferringPhysicianName</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="nt">subject</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="nv">PatientID</span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="nt">acquisition_time</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="nv">AcquisitionTime</span><span class="p p-Indicator">}</span>
+</pre></div>
+</div>
+</section>
+<section id="ais-deid-ais-deid-dicom-transforms-and-the-engine-s-variable-builders">
+<h3><code class="docutils literal notranslate"><span class="pre">ais_deid</span></code> (<code class="docutils literal notranslate"><span class="pre">ais_deid.dicom.transforms</span></code> and the engine’s variable builders)<a class="headerlink" href="#ais-deid-ais-deid-dicom-transforms-and-the-engine-s-variable-builders" title="Link to this heading">¶</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">"0.1"</span>
+<span class="nt">variables</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">anon_patient_id</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PatientID</span>
+<span class="w">    </span><span class="nt">apply</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">blank_if_empty</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">hash</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">length</span><span class="p">:</span><span class="w"> </span><span class="nv">24</span><span class="p p-Indicator">}}]</span>
+<span class="w">  </span><span class="nt">anon_accession_number</span><span class="p">:</span><span class="w">            </span><span class="c1"># SH, max 16 characters</span>
+<span class="w">    </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AccessionNumber</span>
+<span class="w">    </span><span class="nt">apply</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">blank_if_empty</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">hash</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">length</span><span class="p">:</span><span class="w"> </span><span class="nv">16</span><span class="p p-Indicator">,</span><span class="nt"> namespace</span><span class="p">:</span><span class="w"> </span><span class="nv">AccessionNumber</span><span class="p p-Indicator">}}]</span>
+<span class="w">  </span><span class="nt">anon_study_id</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">StudyID</span>
+<span class="w">    </span><span class="nt">apply</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">blank_if_empty</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">hash</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">length</span><span class="p">:</span><span class="w"> </span><span class="nv">16</span><span class="p p-Indicator">,</span><span class="nt"> namespace</span><span class="p">:</span><span class="w"> </span><span class="nv">StudyID</span><span class="p p-Indicator">}}]</span>
+<span class="w">  </span><span class="nt">date_jitter</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">env</span><span class="p">:</span><span class="w"> </span><span class="nv">DEID_DATE_JITTER</span><span class="p p-Indicator">,</span><span class="nt"> default</span><span class="p">:</span><span class="w"> </span><span class="nv">0</span><span class="p p-Indicator">,</span><span class="nt"> apply</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">to_int</span><span class="p p-Indicator">]}</span>
+<span class="nt">functions</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">hash_patient_id</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">field</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">value</span>
+<span class="w">    </span><span class="nt">apply</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">blank_if_empty</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">hash</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">length</span><span class="p">:</span><span class="w"> </span><span class="nv">24</span><span class="p p-Indicator">}}]</span>
+<span class="w">  </span><span class="nt">hash_accession_number</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">field</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">value</span>
+<span class="w">    </span><span class="nt">apply</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">blank_if_empty</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">hash</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">length</span><span class="p">:</span><span class="w"> </span><span class="nv">16</span><span class="p p-Indicator">,</span><span class="nt"> namespace</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">field</span><span class="p">:</span><span class="w"> </span><span class="nv">name</span><span class="p p-Indicator">}}}]</span>
+</pre></div>
+</div>
+<p>Its constant <code class="docutils literal notranslate"><span class="pre">anon_patient_name</span></code> builder (<code class="docutils literal notranslate"><span class="pre">&quot;ANONYMOUS&quot;</span></code>) and its <code class="docutils literal notranslate"><span class="pre">passthrough</span></code> and
+<code class="docutils literal notranslate"><span class="pre">blank_if_present</span></code> functions aren’t transforms. In the recipe they are
+<code class="docutils literal notranslate"><span class="pre">REPLACE</span> <span class="pre">PatientName</span> <span class="pre">ANONYMOUS</span></code>, <code class="docutils literal notranslate"><span class="pre">KEEP</span> <span class="pre">&lt;field&gt;</span></code> and <code class="docutils literal notranslate"><span class="pre">BLANK</span> <span class="pre">&lt;field&gt;</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ais_deid</span></code> currently has salting disabled. Its exact current behaviour is
+<code class="docutils literal notranslate"><span class="pre">hash:</span> <span class="pre">{salt:</span> <span class="pre">false,</span> <span class="pre">...}</span></code>, but with a <code class="docutils literal notranslate"><span class="pre">.salt</span></code> side-car the default (salted) is
+what its comments describe as the intended configuration.</p>
+</section>
+<section id="deid-examples">
+<h3>deid examples<a class="headerlink" href="#deid-examples" title="Link to this heading">¶</a></h3>
+<p>deid’s bundled recipes reference <code class="docutils literal notranslate"><span class="pre">var:entity_id</span></code>, <code class="docutils literal notranslate"><span class="pre">var:item_id</span></code>,
+<code class="docutils literal notranslate"><span class="pre">var:entity_timestamp</span></code> and <code class="docutils literal notranslate"><span class="pre">var:item_timestamp</span></code>. For example:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="s">"0.1"</span>
+<span class="nt">variables</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">entity_id</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="nv">PatientID</span><span class="p p-Indicator">,</span><span class="nt"> apply</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[{</span><span class="nt">hash</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">length</span><span class="p">:</span><span class="w"> </span><span class="nv">16</span><span class="p p-Indicator">,</span><span class="nt"> namespace</span><span class="p">:</span><span class="w"> </span><span class="nv">entity</span><span class="p p-Indicator">}}]}</span>
+<span class="w">  </span><span class="nt">item_id</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="nv">SOPInstanceUID</span><span class="p p-Indicator">,</span><span class="nt"> apply</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[{</span><span class="nt">hash</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">length</span><span class="p">:</span><span class="w"> </span><span class="nv">16</span><span class="p p-Indicator">,</span><span class="nt"> namespace</span><span class="p">:</span><span class="w"> </span><span class="nv">item</span><span class="p p-Indicator">}}]}</span>
+<span class="w">  </span><span class="nt">entity_timestamp</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="nv">StudyDate</span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">item_timestamp</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">template</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="s">"{date}{time}"</span>
+<span class="w">      </span><span class="nt">values</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">date</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="nv">AcquisitionDate</span><span class="p p-Indicator">},</span><span class="nt"> time</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">tag</span><span class="p">:</span><span class="w"> </span><span class="nv">AcquisitionTime</span><span class="p p-Indicator">}}</span>
+</pre></div>
+</div>
+<p>deid’s <code class="docutils literal notranslate"><span class="pre">func:</span></code> examples that generate random values (e.g. a UUID suffix) are
+already available without code as <code class="docutils literal notranslate"><span class="pre">deid_func:suffix_uuid</span></code>, <code class="docutils literal notranslate"><span class="pre">deid_func:dicom_uuid</span></code>
+and <code class="docutils literal notranslate"><span class="pre">deid_func:pydicom_uuid</span></code>, and date shifting as <code class="docutils literal notranslate"><span class="pre">JITTER</span></code> / <code class="docutils literal notranslate"><span class="pre">deid_func:jitter</span></code>.</p>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="api.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">API</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="deidentification.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Deidentification</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, Thomas G. Close
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Deid transforms specification, version 0.1</a><ul>
+<li><a class="reference internal" href="#files">Files</a></li>
+<li><a class="reference internal" href="#document-structure">Document structure</a><ul>
+<li><a class="reference internal" href="#variables-and-functions">Variables and functions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#expressions">Expressions</a><ul>
+<li><a class="reference internal" href="#sources">Sources</a><ul>
+<li><a class="reference internal" href="#field-functions-only"><code class="docutils literal notranslate"><span class="pre">field</span></code> (functions only)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#operations">Operations</a><ul>
+<li><a class="reference internal" href="#hash"><code class="docutils literal notranslate"><span class="pre">hash</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#errors">Errors</a></li>
+<li><a class="reference internal" href="#versioning-and-extensibility">Versioning and extensibility</a><ul>
+<li><a class="reference internal" href="#candidates-for-future-versions">Candidates for future versions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#examples">Examples</a><ul>
+<li><a class="reference internal" href="#xnat-ingest-default-dicom-series-transforms-yaml">xnat-ingest default (<code class="docutils literal notranslate"><span class="pre">dicom-series.transforms.yaml</span></code>)</a></li>
+<li><a class="reference internal" href="#ais-deid-ais-deid-dicom-transforms-and-the-engine-s-variable-builders"><code class="docutils literal notranslate"><span class="pre">ais_deid</span></code> (<code class="docutils literal notranslate"><span class="pre">ais_deid.dicom.transforms</span></code> and the engine’s variable builders)</a></li>
+<li><a class="reference internal" href="#deid-examples">deid examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=7c174e4c"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>
