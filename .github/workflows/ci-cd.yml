@@ -66,7 +66,7 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v7
       with:
-        fail_ci_if_error: true
+        fail_ci_if_error: false
         token: ${{ secrets.CODECOV_TOKEN }}
 
   build:
@@ -167,24 +167,21 @@ jobs:
 
   deploy-docs:
     needs: [build-docs, deploy]
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    # Allows the built-in GITHUB_TOKEN to push to the gh-pages branch
+    permissions:
+      contents: write
     steps:
     - name: Download built docs
       uses: actions/download-artifact@v8
       with:
         name: built-docs
         path: docs-build
-    - name: Check for GHPAGES_DEPLOY_KEY token
-      id: deployable
-      if: github.event_name == 'release'
-      env:
-        GHPAGES_DEPLOY_KEY: "${{ secrets.GHPAGES_DEPLOY_KEY }}"
-      run: if [ -n "$GHPAGES_DEPLOY_KEY" ]; then echo "DEPLOY=true" >> $GITHUB_OUTPUT; fi
     - name: Deploy docs to GitHub Pages
-      if: steps.deployable.outputs.DEPLOY
       uses: peaceiris/actions-gh-pages@v4
       with:
-        github_token: ${{ secrets.GHPAGES_DEPLOY_KEY }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: docs-build
 
 # Deploy on tags if PYPI_API_TOKEN is defined in the repository secrets.

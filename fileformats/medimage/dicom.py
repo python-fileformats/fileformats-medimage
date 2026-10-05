@@ -41,9 +41,10 @@ class DicomImage(MedicalImage, Dicom):
 
 
 def dicom_sort_key(dicom: Dicom) -> str:
-    """Sorts DICOM objects by SOPInstanceUID"""
-    assert isinstance(dicom.metadata, ty.Mapping)
-    return dicom.metadata["SOPInstanceUID"]  # type: ignore[no-any-return]
+    """Sorts DICOM objects by SOPInstanceUID, reading just that tag from the file
+    rather than the full header (which is an order of magnitude slower)"""
+    metadata = dicom.read_metadata(metadata_keys=["SOPInstanceUID"])
+    return metadata["SOPInstanceUID"]  # type: ignore[no-any-return]
 
 
 class DicomCollection(MedicalImage, TypedCollection):
