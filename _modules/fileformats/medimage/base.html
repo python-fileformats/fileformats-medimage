@@ -6,7 +6,7 @@
         <link rel="prefetch" href="../../../_static/logo_small.png" as="image">
 
     <link rel="shortcut icon" href="../../../_static/favicon.png"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>fileformats.medimage.base - FileFormats-Medimage v0.15.3</title>
+        <title>fileformats.medimage.base - FileFormats-Medimage v0.15.4</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=beddf052" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -167,7 +167,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">FileFormats-Medimage v0.15.3</div></a>
+      <a href="../../../index.html"><div class="brand">FileFormats-Medimage v0.15.4</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -191,7 +191,7 @@
     <img class="sidebar-logo" src="../../../_static/logo_small.png" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">FileFormats-Medimage v0.15.3</span>
+  <span class="sidebar-brand-text">FileFormats-Medimage v0.15.4</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -250,13 +250,17 @@
           <h1>Source code for fileformats.medimage.base</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ty</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">fileformats.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileSet</span><span class="p">,</span> <span class="n">Loaded</span><span class="p">,</span> <span class="n">extra</span><span class="p">,</span> <span class="n">mtime_cached_property</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">fileformats.core</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FileSet</span><span class="p">,</span>
+    <span class="n">Loaded</span><span class="p">,</span>
+    <span class="n">extra</span><span class="p">,</span>
+    <span class="n">mtime_cached_property</span><span class="p">,</span>
+    <span class="n">staged_out_dir</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">fileformats.core.mixin</span><span class="w"> </span><span class="kn">import</span> <span class="n">WithClassifiers</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.contents</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContentsClassifier</span>
@@ -288,49 +292,6 @@
 <span class="p">)</span>  <span class="c1"># In Py&lt;3.9 this is problematic "numpy.typing.NDArray[typing.Union[numpy.floating[typing.Any], numpy.integer[typing.Any]]]"</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_deidentify_wrapper</span><span class="p">(</span>
-    <span class="n">implementation</span><span class="p">:</span> <span class="n">ty</span><span class="o">.</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ty</span><span class="o">.</span><span class="n">Any</span><span class="p">],</span>
-    <span class="n">fileset</span><span class="p">:</span> <span class="n">FileSet</span><span class="p">,</span>
-    <span class="n">out_dir</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-    <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">ty</span><span class="o">.</span><span class="n">Any</span><span class="p">,</span>
-    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">ty</span><span class="o">.</span><span class="n">Any</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileSet</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Runs the deidentify implementation with a hidden staging directory alongside</span>
-<span class="sd">    `out_dir` as its output directory, and only moves its output into `out_dir` once it</span>
-<span class="sd">    has returned, so that only fully deidentified files end up there. Implementations</span>
-<span class="sd">    are therefore free to copy files into their output directory and deidentify them</span>
-<span class="sd">    in place."""</span>
-    <span class="n">out_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
-    <span class="n">out_dir</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">staging_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span>
-        <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">out_dir</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="sa">f</span><span class="s2">".deidentify-</span><span class="si">{</span><span class="n">out_dir</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-"</span><span class="p">)</span>
-    <span class="p">)</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">deidentified</span><span class="p">:</span> <span class="n">FileSet</span> <span class="o">=</span> <span class="n">implementation</span><span class="p">(</span><span class="n">fileset</span><span class="p">,</span> <span class="n">staging_dir</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">rel_fspaths</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">p</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">staging_dir</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">deidentified</span><span class="o">.</span><span class="n">fspaths</span>
-            <span class="p">]</span>
-        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"The deidentify implementation for </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">fileset</span><span class="p">)</span><span class="si">}</span><span class="s2"> filesets, "</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">implementation</span><span class="si">}</span><span class="s2">, didn't write its output to the 'out_dir' it was "</span>
-                <span class="sa">f</span><span class="s2">"passed: </span><span class="si">{</span><span class="n">deidentified</span><span class="o">.</span><span class="n">fspaths</span><span class="si">}</span><span class="s2">"</span>
-            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
-        <span class="n">entries</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">staging_dir</span><span class="o">.</span><span class="n">iterdir</span><span class="p">())</span>
-        <span class="k">if</span> <span class="n">existing</span> <span class="o">:=</span> <span class="p">[</span><span class="n">e</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">entries</span> <span class="k">if</span> <span class="p">(</span><span class="n">out_dir</span> <span class="o">/</span> <span class="n">e</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()]:</span>
-            <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"Cannot deidentify </span><span class="si">{</span><span class="n">fileset</span><span class="si">}</span><span class="s2"> into </span><span class="si">{</span><span class="n">out_dir</span><span class="si">}</span><span class="s2"> as </span><span class="si">{</span><span class="n">existing</span><span class="si">}</span><span class="s2"> already "</span>
-                <span class="s2">"exist(s) there"</span>
-            <span class="p">)</span>
-        <span class="n">out_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="n">entry</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-    <span class="k">finally</span><span class="p">:</span>
-        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">staging_dir</span><span class="p">,</span> <span class="n">ignore_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">deidentified</span><span class="p">)([</span><span class="n">out_dir</span> <span class="o">/</span> <span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rel_fspaths</span><span class="p">])</span>
-
-
 <div class="viewcode-block" id="MedicalImagingData">
 <a class="viewcode-back" href="../../../api.html#fileformats.medimage.MedicalImagingData">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MedicalImagingData</span><span class="p">(</span><span class="n">FileSet</span><span class="p">):</span>
@@ -345,7 +306,7 @@
 
 <div class="viewcode-block" id="MedicalImagingData.deidentify">
 <a class="viewcode-back" href="../../../api.html#fileformats.medimage.MedicalImagingData.deidentify">[docs]</a>
-    <span class="nd">@extra</span><span class="p">(</span><span class="n">wrapper</span><span class="o">=</span><span class="n">_deidentify_wrapper</span><span class="p">)</span>
+    <span class="nd">@extra</span><span class="p">(</span><span class="n">wrapper</span><span class="o">=</span><span class="n">staged_out_dir</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">deidentify</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">out_dir</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
@@ -412,7 +373,13 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Deidentifies the medical imaging data nested within the fileset (i.e.</span>
 <span class="sd">        returned by its validated properties) with their own implementations, and</span>
-<span class="sd">        copies its remaining files unchanged, keeping the same layout.</span>
+<span class="sd">        copies its remaining files unchanged, keeping the same layout (see</span>
+<span class="sd">        `FileSet.map_nested`).</span>
+
+<span class="sd">        Nested filesets of other types are deidentified too if they have a truthy</span>
+<span class="sd">        `contains_phi` attribute, which they then need a `deidentify` method for</span>
+<span class="sd">        (taking the same arguments), so formats from other packages that follow the</span>
+<span class="sd">        same convention can be nested within each other.</span>
 
 <span class="sd">        For use within `deidentify` implementations of formats that contain others,</span>
 <span class="sd">        which can then deidentify any of the format's own files that may contain PHI</span>
@@ -434,66 +401,21 @@
 <span class="sd">        Self</span>
 <span class="sd">            the copy of the fileset with the nested filesets deidentified</span>
 <span class="sd">        """</span>
-        <span class="n">out_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
-        <span class="n">src_root</span> <span class="o">=</span> <span class="n">_root_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="n">own_paths</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_file_paths</span><span class="p">())</span>
-        <span class="c1"># Deidentify the nested formats first, each writing straight into its place in</span>
-        <span class="c1"># the copy's layout. Formats without an implementation raise here, before</span>
-        <span class="c1"># anything is copied</span>
-        <span class="n">deidentified_paths</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">nested</span> <span class="ow">in</span> <span class="n">_direct_nested_filesets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">nested</span><span class="p">,</span> <span class="n">MedicalImagingData</span><span class="p">)</span> <span class="ow">and</span> <span class="n">nested</span><span class="o">.</span><span class="n">contains_phi</span><span class="p">):</span>
-                <span class="k">continue</span>  <span class="c1"># copied unchanged along with the rest</span>
-            <span class="n">nested_paths</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">nested</span><span class="o">.</span><span class="n">all_file_paths</span><span class="p">())</span>
-            <span class="k">if</span> <span class="n">outside</span> <span class="o">:=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">nested_paths</span> <span class="o">-</span> <span class="n">own_paths</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">nested</span><span class="si">}</span><span class="s2"> is nested within </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s2"> but contains paths that aren't "</span>
-                    <span class="sa">f</span><span class="s2">"part of it, </span><span class="si">{</span><span class="n">outside</span><span class="si">}</span><span class="s2">, so the properties of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2"> should "</span>
-                    <span class="s2">"only return filesets made up of its own paths"</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">deidentify</span><span class="p">(</span><span class="n">nested</span><span class="p">:</span> <span class="n">FileSet</span><span class="p">,</span> <span class="n">dest_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FileSet</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Duck-typed, so nested formats from other families that follow the same</span>
+            <span class="c1"># `contains_phi`/`deidentify` convention (e.g. medical imaging data and</span>
+            <span class="c1"># biosignals) are also deidentified. One that may contain PHI but doesn't</span>
+            <span class="c1"># have a `deidentify` method raises, rather than being copied</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">nested</span><span class="p">,</span> <span class="s2">"contains_phi"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="n">deidentified</span><span class="p">:</span> <span class="n">FileSet</span> <span class="o">=</span> <span class="n">nested</span><span class="o">.</span><span class="n">deidentify</span><span class="p">(</span>  <span class="c1"># type: ignore[attr-defined]</span>
+                    <span class="n">dest_dir</span><span class="p">,</span> <span class="n">recipe</span><span class="o">=</span><span class="n">recipe</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
                 <span class="p">)</span>
-            <span class="k">if</span> <span class="n">nested_paths</span> <span class="o">&lt;=</span> <span class="n">deidentified_paths</span><span class="p">:</span>
-                <span class="k">continue</span>  <span class="c1"># already deidentified as part of another nested fileset</span>
-            <span class="n">nested</span><span class="o">.</span><span class="n">deidentify</span><span class="p">(</span>
-                <span class="n">out_dir</span> <span class="o">/</span> <span class="n">_root_dir</span><span class="p">(</span><span class="n">nested</span><span class="p">)</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">src_root</span><span class="p">),</span>
-                <span class="n">recipe</span><span class="o">=</span><span class="n">recipe</span><span class="p">,</span>
-                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">deidentified_paths</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">nested_paths</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">own_paths</span> <span class="o">-</span> <span class="n">deidentified_paths</span><span class="p">:</span>
-            <span class="n">dest</span> <span class="o">=</span> <span class="n">out_dir</span> <span class="o">/</span> <span class="n">path</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">src_root</span><span class="p">)</span>
-            <span class="n">dest</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
-        <span class="c1"># Reinstantiating the type checks that the nested deidentifications preserved</span>
-        <span class="c1"># the layout it requires (e.g. didn't rename files it looks for)</span>
-        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)([</span><span class="n">out_dir</span> <span class="o">/</span> <span class="n">p</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">src_root</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fspaths</span><span class="p">])</span></div>
+                <span class="k">return</span> <span class="n">deidentified</span>
+            <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># copied unchanged</span>
 
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_nested</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">deidentify</span><span class="p">)</span></div>
 
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_root_dir</span><span class="p">(</span><span class="n">fileset</span><span class="p">:</span> <span class="n">FileSet</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The directory containing all of the fileset's paths (the parent of a directory</span>
-<span class="sd">    fileset rather than the directory itself)"""</span>
-    <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">commonpath</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">parent</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">fileset</span><span class="o">.</span><span class="n">fspaths</span><span class="p">]))</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_direct_nested_filesets</span><span class="p">(</span><span class="n">fileset</span><span class="p">:</span> <span class="n">FileSet</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">FileSet</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""The filesets returned by the fileset's validated properties, including those</span>
-<span class="sd">    within dicts and sequences, but not those nested further down (unlike</span>
-<span class="sd">    `FileSet.nested_filesets()`), which are left to the filesets they are nested in"""</span>
-    <span class="n">nested</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">FileSet</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">collect</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">ty</span><span class="o">.</span><span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">FileSet</span><span class="p">):</span>
-            <span class="n">nested</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ty</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-                <span class="n">collect</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">frozenset</span><span class="p">)):</span>
-            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
-                <span class="n">collect</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">fileset</span><span class="o">.</span><span class="n">validated_properties</span><span class="p">()):</span>
-        <span class="n">collect</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">fileset</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">nested</span>
 
 
 <div class="viewcode-block" id="MedicalImage">
@@ -569,7 +491,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=d86fca55"></script>
+</div><script src="../../../_static/documentation_options.js?v=13e65a98"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
