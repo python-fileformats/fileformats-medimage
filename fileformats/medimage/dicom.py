@@ -163,15 +163,17 @@ class DicomSeries(TypedSet, DicomCollection):
 def dicom_collection_read_metadata(
     collection: DicomCollection, **kwargs: ty.Any
 ) -> ty.Mapping[str, ty.Any]:
-    # We use the "contents" property implementation in TypeSet instead of the overload
-    # in DicomCollection because we don't want the metadata to be read ahead of the
-    # the `select_metadata` call below
+    # Read through the base collection to avoid the subclass contents overload.
+    # Sort whole instance records before collation so every varying field has
+    # the same stable order, independent of path iteration and hash seed.
     base_class: ty.Union[ty.Type[TypedSet], ty.Type[TypedDirectory]] = (
         TypedSet if isinstance(collection, DicomSeries) else TypedDirectory
     )
-    return collate_metadata_series(
-        [d.metadata for d in base_class.contents.__get__(collection)]
-    )
+    metadata: list[ty.Mapping[str, ty.Any]] = [
+        d.metadata for d in base_class.contents.__get__(collection)
+    ]
+    metadata.sort(key=lambda instance: instance["SOPInstanceUID"])
+    return collate_metadata_series(metadata)
 
 
 def get_dicom_tag(
