@@ -189,7 +189,7 @@ can read it from the ``recipe`` annotation of the implementation for the datatyp
 annotation in order, or ``None`` if the implementation doesn't take a recipe (i.e. its
 ``recipe`` argument is annotated with ``None``). The hints must be retrieved with
 ``include_extras=True``, otherwise the ``LoadedMarker`` metadata is stripped.
-`xnat-ingest <https://github.com/Australian-Imaging-Service/xnat-ingest>`__ uses this to
+`accessionflow <https://github.com/Australian-Imaging-Service/accessionflow>`__ uses this to
 pick the recipe for each format from a directory of recipes named after their formats
 (e.g. ``medimage/dicom-series``).
 
