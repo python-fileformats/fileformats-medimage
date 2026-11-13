@@ -282,7 +282,7 @@ These are not part of 0.1, and are listed to guide extensions:
 Examples
 --------
 
-xnat-ingest default (``dicom-series.transforms.yaml``)
+accessionflow default (``dicom-series.transforms.yaml``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: yaml
